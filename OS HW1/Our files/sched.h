@@ -28,7 +28,7 @@ extern unsigned long event;
 #include <linux/fs_struct.h>
 #include <linux/low-latency.h>
 /* our changes */
-#include <linux/list.h>
+#include <linux/list.h>//maybe not needed
 /* our changes END*/
 struct exec_domain;
 
@@ -324,10 +324,10 @@ typedef struct prio_array prio_array_t;
 
 /* our changes */
 struct enchanted_process{
-	int is_have_wand ;
-	int health ;
-	int power ;
-	char my_secret[] ;
+	int holding_wand = 0;// need to ask how to initial task properly
+	int health;
+	int power;
+	char my_secret[];
 	list_t secrets;
 } 
 typedef struct enchanted_process uenchanted_process_t;

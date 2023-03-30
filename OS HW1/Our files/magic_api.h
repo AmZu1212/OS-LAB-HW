@@ -1,8 +1,6 @@
 //magic_api.h
-// warper functions
-
-//test123
-
+//warper functions		
+#include <include/linux/errno.h> 
 #define SECRET_MAXSIZE 32 
 
 int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
@@ -25,11 +23,31 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 		: "m" (power),"m"(secret) 
 	); 
 	
-	if (res < 0)
-	{
-		errno = -res;
-		res = -1 
-	} return res;
+	 
+	if (res < 0) {
+		switch (res) {
+		case -1:
+			errno = EEXIST; // The process already has a wand
+			break;
+
+		case -2:
+			errno = EFAULT; // Error copying secret from user or secret is NULL
+			break;
+
+		case -3:
+			errno = EINVAL; // Length of secret is zero
+			break;
+		}
+		case -4:
+			errno = ENOMEM; // Cannot allocate memory
+			break;
+	} else {
+
+		return res; // Success
+	}
+
+	res = -1;
+	return res; // Fail
 }
 
 int magic_attack(pid_t pid)
