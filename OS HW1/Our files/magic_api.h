@@ -1,6 +1,7 @@
 //magic_api.h
 // warper functions
 
+//test123
 
 #define SECRET_MAXSIZE 32 
 
