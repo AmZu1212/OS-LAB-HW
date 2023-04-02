@@ -3,12 +3,13 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/list.h>
-char null_character = 0; // ???
+#define SECRET_MAXSIZE 32
+
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
 	task_struct* p = current;
 
-	if (p.cur_enchanted_process.holding_wand) {
+	if (p->enchanted_p.holding_wand) {
 		return -1; //fail, already holding wand
 	}
 	
@@ -19,34 +20,49 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	if (strlen(secret) == 0) {	
 		return -3; //fail, size of secret is 0
 	}
+
+
+	/*==========================secret checks & copy=========================*/
 	
-	//need to check secret copy
-	/*
-	p.cur_enchanted_process.my_secret = (char)malloc(sizeof(char) * strlen(secret));
-	
-	if (p.cur_enchanted_process.my_secret == NULL) {
-		return -4; //fail, error in malloc
+	int len = 0;
+
+	for (; len < SECRET_MAXSIZE; len++) {
+
+		if (secret[len] == '\0') {
+			++len;
+			break;
+		}
 	}
 
-	strcpy(p.cur_enchanted_process.my_secret,secret);
 	
-	if (!strcmp(p.cur_enchanted_process.my_secret, secret)) {
+	p->enchanted_p.my_secret = (char)*malloc(sizeof(char)*len);
+
+	if (p->enchanted_p.my_secret == NULL) {
+		return -4; // fail, error in malloc
+	}
+
+	strcpy(p->enchanted_p.my_secret, secret);
+	
+	if (!strcmp(p->enchanted_p.my_secret, secret)) {
+		free(p->enchanted.my_secret);
 		return -2; //fail, error in copy
 	}
-	*/
-
-	p.cur_enchanted_process.power = power;
-	p.cur_enchanted_process.holding_wand = 1;
-	p.cur_enchanted_process.health = 100;
-	LIST_HEAD_INIT(p.cur_enchanted_process.secrets); // need to ask how does it work
 
 
+	/*=========================rest of the fields============================*/
+
+	LIST_HEAD_INIT(p->enchanted_p.secrets);
+	p->enchanted_p.power = power;
+	p->enchanted_p.holding_wand = 1;
+	p->enchanted_p.health = 100;
 
 	return 0; // success
 }
 
 int sys_magic_attack(pid_t pid) {
 	
+
+
 }
 
 int sys_magic_legilimens(pid_t pid) {

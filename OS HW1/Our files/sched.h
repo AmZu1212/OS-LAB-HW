@@ -323,14 +323,14 @@ extern struct user_struct root_user;
 typedef struct prio_array prio_array_t;
 
 /* our changes */
-struct enchanted_process{
+struct enchanted {
 	int holding_wand = 0;// need to ask how to initial task properly
 	int health;
 	int power;
 	char my_secret[];
 	list_t secrets;
 } 
-typedef struct enchanted_process uenchanted_process_t;
+typedef struct enchanted enchanted_t;
 	
 /* our changes end*/
 
@@ -469,7 +469,7 @@ struct task_struct {
 	void *journal_info;
 	
 	/* our changes */
-	enchanted_process_t cur_enchanted_process;
+	enchanted_t enchanted_p;
 	/* our changes end*/
 	
 };
