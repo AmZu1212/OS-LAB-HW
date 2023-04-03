@@ -1,5 +1,6 @@
 //new magic syscalls
 #include <string.h>
+#include <sys/types.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/list.h>
@@ -7,7 +8,7 @@
 
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
-	task_struct* p = current;
+	task_t* p = current;
 
 	if (p->enchanted_p.holding_wand) {
 		return -1; //fail, already holding wand
@@ -44,7 +45,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	strcpy(p->enchanted_p.my_secret, secret);
 	
 	if (!strcmp(p->enchanted_p.my_secret, secret)) {
-		free(p->enchanted.my_secret);
+		free(p->enchanted_p.my_secret);
 		return -2; //fail, error in copy
 	}
 
@@ -61,7 +62,10 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 int sys_magic_attack(pid_t pid) {
 	
+	task_t* p = current;
 
+	return ;/*pid is a integer,
+		need to get process pointer + return new process's health on finish*/
 
 }
 
