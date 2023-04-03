@@ -17,9 +17,6 @@ int max(int a, int b) {
 	}
 }
 
-
-
-
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
 	task_t* p = current;
