@@ -6,6 +6,20 @@
 #include <linux/list.h>
 #define SECRET_MAXSIZE 32
 
+
+int max(int a, int b) {
+
+	if (a > b) {
+		return a;
+	}
+	else {
+		return b;
+	}
+}
+
+
+
+
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
 	task_t* p = current;
@@ -62,11 +76,55 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 int sys_magic_attack(pid_t pid) {
 	
-	task_t* p = current;
+	task_t* attacker = current;
+	task_t* target = find_task_by_pid(pid);// found in /include/linux/sched.h
 
-	return ;/*pid is a integer,
-		need to get process pointer + return new process's health on finish*/
 
+	/*=========================checks & errors=================================*/
+	if (target == NULL) {
+		return -1; // pid doesnt exist
+	}
+
+	if (attacker->enchanted_p.holding_wand == 0 ||
+		target->enchanted_p.holding_wand == 0) {
+		return -2; // one of the processes isnt holding any wand.
+	}
+
+	if (attacker->enchanted_p.health || target->enchanted_p.health) {
+		return -3; // one of the processes arrived with 0 hp.
+	}
+
+	//checking wether if "current my_secret" is already stolen or not
+	int listlen = 0;
+	list_t head = target->enchanted_p.secret_list;
+	while (head != NULL) {
+
+		head = head.next;
+
+		listlen++;
+	}
+	
+	head = target->secret_list;
+	
+	for (int i = 0; i < listlen; i++)
+	{
+		if (!strcmp(head.secret_list[i], attacker->enchanted_p.my_secret)) {
+			return -5; // target already has stolen attackers secret.
+		}
+	}
+
+	if (attacker == target) {
+		return -5; // attacker is target
+	}
+	/*======================================================================*/
+	
+	//assuming this action is valid:
+
+	int dmg = attacker->enchanted_p.power;
+	int health = target->enchanted_p.health;
+	target->enchanted_p.health = max(health - power, 0);
+
+	return target->enchanted_p.health;
 }
 
 int sys_magic_legilimens(pid_t pid) {
