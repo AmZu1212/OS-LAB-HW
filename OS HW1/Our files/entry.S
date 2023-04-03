@@ -24,7 +24,7 @@
  *	 0(%esp) - %ebx
  *	 4(%esp) - %ecx
  *	 8(%esp) - %edx
- *       C(%esp) - %esi
+ *	 C(%esp) - %esi
  *	10(%esp) - %edi
  *	14(%esp) - %ebp
  *	18(%esp) - %eax
