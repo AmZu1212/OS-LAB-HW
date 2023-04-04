@@ -6,6 +6,15 @@
 #include <linux/list.h>
 #define SECRET_MAXSIZE 32
 
+struct secrets_list {
+	list_t node;
+	string secret[SECRET_MAXSIZE];
+};
+
+typedef secrets_list secrets_list_t;
+
+
+
 
 int max(int a, int b) {
 
@@ -21,7 +30,8 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
 	task_t* p = current;
 
-	if (p->enchanted_p.holding_wand) {
+	/*=========== error checks ===========*/
+	if (p->holding_wand) {
 		return -1; //fail, already holding wand
 	}
 	
@@ -34,8 +44,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	}
 
 
-	/*==========================secret checks & copy=========================*/
-	
+	/*=========== copying secret -> my_secret ===========*/
 	int len = 0;
 
 	for (; len < SECRET_MAXSIZE; len++) {
@@ -46,27 +55,25 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 		}
 	}
 
-	
-	p->enchanted_p.my_secret = (char)*malloc(sizeof(char)*len);
+	p->my_secret = (char)*malloc(sizeof(char)*len);
 
-	if (p->enchanted_p.my_secret == NULL) {
+	if (p->my_secret == NULL) {
 		return -4; // fail, error in malloc
 	}
 
-	strcpy(p->enchanted_p.my_secret, secret);
+	strcpy(p->my_secret, secret);
 	
-	if (!strcmp(p->enchanted_p.my_secret, secret)) {
-		free(p->enchanted_p.my_secret);
+	if (!strcmp(p->my_secret, secret)) {
+		free(p->my_secret);
 		return -2; //fail, error in copy
 	}
 
 
-	/*=========================rest of the fields============================*/
-
-	LIST_HEAD_INIT(p->enchanted_p.secrets);
-	p->enchanted_p.power = power;
-	p->enchanted_p.holding_wand = 1;
-	p->enchanted_p.health = 100;
+	/*=========== the rest of teh variables ===========*/
+	LIST_HEAD_INIT(p->secret_ptr);
+	p->power = power;
+	p->holding_wand = 1;
+	p->health = 100;
 
 	return 0; // success
 }
@@ -74,38 +81,46 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 int sys_magic_attack(pid_t pid) {
 	
 	task_t* attacker = current;
+
 	task_t* target = find_task_by_pid(pid);// found in /include/linux/sched.h
 
 
-	/*=========================checks & errors=================================*/
+	/*=========== error checks ===========*/
 	if (target == NULL) {
 		return -1; // pid doesnt exist
 	}
 
-	if (attacker->enchanted_p.holding_wand == 0 ||
-		target->enchanted_p.holding_wand == 0) {
+	if (attacker->holding_wand == 0 ||
+		target->holding_wand == 0) {
 		return -2; // one of the processes isnt holding any wand.
 	}
 
-	if (attacker->enchanted_p.health || target->enchanted_p.health) {
+	if (!(attacker->health) || !(target->health)) {
 		return -3; // one of the processes arrived with 0 hp.
 	}
 
-	//checking wether if "current my_secret" is already stolen or not
-	int listlen = 0;
-	list_t head = target->enchanted_p.secret_list;
+
+	/*=========== check for if my_secret is already stolen ===========*/
+	
+	//this part isnt 100% right need to polish it
+	int targetlistlen = 0;
+	list_t head = target->stolen_secrets.node;
 	while (head != NULL) {
 
 		head = head.next;
 
-		listlen++;
+		targetlistlen++;
 	}
 	
-	head = target->secret_list;
+	head = target->stolen_secrets.node;
 	
+	secrets_list_t target_list;
+
+	target_list = target->stolen_secrets;
+
 	for (int i = 0; i < listlen; i++)
 	{
-		if (!strcmp(head.secret_list[i], attacker->enchanted_p.my_secret)) {
+		if (!strcmp(target->stolen_secrets.secret, attacker->my_secret)) {
 			return -5; // target already has stolen attackers secret.
 		}
 	}
@@ -113,12 +128,13 @@ int sys_magic_attack(pid_t pid) {
 	if (attacker == target) {
 		return -5; // attacker is target
 	}
-	/*======================================================================*/
-	
-	//assuming this action is valid:
+	//until here
 
+	/*=========== assuming everything is valid ===========*/
 	int dmg = attacker->enchanted_p.power;
+
 	int health = target->enchanted_p.health;
+
 	target->enchanted_p.health = max(health - power, 0);
 
 	return target->enchanted_p.health;
