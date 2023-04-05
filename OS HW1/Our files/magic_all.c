@@ -7,8 +7,8 @@
 #define SECRET_MAXSIZE 32
 
 struct secrets_list {
+	char secret[SECRET_MAXSIZE];
 	list_t node;
-	string secret[SECRET_MAXSIZE];
 };
 
 typedef secrets_list secrets_list_t;
@@ -55,7 +55,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 		}
 	}
 
-	p->my_secret = (char)*malloc(sizeof(char)*len);
+	p->my_secret = (char*)malloc(sizeof(char)*(len)); // problem: is it 32 or 32 + 1 ? , also malloc or kmalloc?
 
 	if (p->my_secret == NULL) {
 		return -4; // fail, error in malloc
@@ -63,14 +63,14 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 	strcpy(p->my_secret, secret);
 	
-	if (!strcmp(p->my_secret, secret)) {
+	if (strcmp(p->my_secret, secret)) {
 		free(p->my_secret);
 		return -2; //fail, error in copy
 	}
 
-
-	/*=========== the rest of teh variables ===========*/
-	LIST_HEAD_INIT(p->secret_ptr);
+	 
+	/*=========== the rest of the variables ===========*/
+	LIST_HEAD_INIT(p->secrets_ptr);
 	p->power = power;
 	p->holding_wand = 1;
 	p->health = 100;
@@ -86,6 +86,7 @@ int sys_magic_attack(pid_t pid) {
 
 
 	/*=========== error checks ===========*/
+
 	if (target == NULL) {
 		return -1; // pid doesnt exist
 	}
@@ -99,55 +100,108 @@ int sys_magic_attack(pid_t pid) {
 		return -3; // one of the processes arrived with 0 hp.
 	}
 
-
-	/*=========== check for if my_secret is already stolen ===========*/
-	
-	//this part isnt 100% right need to polish it
-	int targetlistlen = 0;
-	list_t head = target->stolen_secrets.node;
-	while (head != NULL) {
-
-		head = head.next;
-
-		targetlistlen++;
-	}
-	
-	head = target->stolen_secrets.node;
-	
-	secrets_list_t target_list;
-
-	target_list = target->stolen_secrets;
-
-	for (int i = 0; i < listlen; i++)
-	{
-		if (!strcmp(target->stolen_secrets.secret, attacker->my_secret)) {
-			return -5; // target already has stolen attackers secret.
-		}
-	}
-
 	if (attacker == target) {
 		return -5; // attacker is target
 	}
-	//until here
+
+
+	/*=========== check for if my_secret is already stolen ===========*/ // problem: check syntax later ?
+
+	list_t* iterator;
+
+	list_for_each(iterator, target->secrets_ptr) {
+
+		secrets_list_t* current = list_entry(iterator,secrets_list_t, node);
+
+		if (!strcmp(current->secret, attacker->my_secret)) {
+			return -5; // target already has stolen attackers secret.
+		}
+	};
 
 	/*=========== assuming everything is valid ===========*/
-	int dmg = attacker->enchanted_p.power;
 
-	int health = target->enchanted_p.health;
+	int dmg = attacker->power;
 
-	target->enchanted_p.health = max(health - power, 0);
+	int health = target->health;
 
-	return target->enchanted_p.health;
+	target->health = max(health - dmg, 0);
+
+	return target->health;
 }
 
 int sys_magic_legilimens(pid_t pid) {
 
+	task_t* attacker = current;
+
+	task_t* target = find_task_by_pid(pid);
+
+	/*=========== error checks ===========*/
+
+	if (target == attacker) {
+		return 0; // attacker is also target, so nothing happens.
+	}
+
+	if (target == NULL) {
+		return -1; // pid doesnt exist
+	}
+
+	if (attacker->holding_wand == 0 ||
+		target->holding_wand == 0) {
+		return -2; // one of the processes isnt holding any wand.
+	}
+	/* check if attacker already has target's secret. (return -3)*/ // maybe make it a function
 
 
+	//problem: a bunch of stuff
+	/* add target's secret to attackers list using */
+	secrets_list_t new_secret;
+	new_secret.secret = target->my_secret;// maybe need to malloc this?
+	//dont forgt emonem error check
+	LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
+
+	list_add_tail(&new_secret.node, attacker->secrets_ptr);
+
+
+	return 0; // success
 }
 
 int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
+	
+	task_t* p = current;
+
+	int list_len = 0;
+
+	list_t* iterator;
+
+	list_for_each(iterator, p->secrets_ptr) {
+
+		list_len++;
+	}
+
+	if (size = 0) { // returns size of secrets list
+		return list_len;
+	}
 
 
+	int counter = list_len;
+	for (int i = 0; i < size; i++) {
+		
+		--counter;
+
+		if (!(counter)) {
+
+			for (int j = list_len; j < size; j++) { // fill the rest with empty strings
+				strcpy(secrets[j][], "");
+			}
+			break;
+		}
+		/*copy i secret using entry + head.next*/
+	}
+	
+	
+	
+
+
+	return (list_len-size); // success | problem : if list_len is shorter than size, what do we return?
 }
