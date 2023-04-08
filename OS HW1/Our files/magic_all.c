@@ -6,6 +6,7 @@
 #include <linux/list.h>
 #define SECRET_MAXSIZE 32
 
+
 struct secrets_list {
 	char secret[SECRET_MAXSIZE];
 	list_t node;
@@ -111,7 +112,7 @@ int sys_magic_attack(pid_t pid) {
 
 	list_for_each(iterator, target->secrets_ptr) {
 
-		secrets_list_t* current = list_entry(iterator,secrets_list_t, node);
+		secrets_list_t* current = list_entry(iterator,secrets_list_t, node); // problem : maybe current is save word in linux?
 
 		if (!strcmp(current->secret, attacker->my_secret)) {
 			return -5; // target already has stolen attackers secret.
@@ -185,9 +186,12 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 
 	int counter = list_len;
-	for (int i = 0; i < size; i++) {
+
+    list_t *ptr;
+    ptr = p->secrets_ptr.next ; // itrator for list secrets 
+    for (int i = 0; i < size; i++) {
 		
-		--counter;
+		--counter; // may need to move to end (what if counter=1)
 
 		if (!(counter)) {
 
@@ -196,7 +200,14 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 			}
 			break;
 		}
+		
 		/*copy i secret using entry + head.next*/
+		
+        secrets_list_t* cur_entry ;
+        cur_entry = list_entry(ptr, secrets_list_t, node); // use list macro "list_entry"
+        strcpy(&secrets[i][32],cur_entry->secret);
+        // check success of strcpy
+        ptr = ptr->next ;
 	}
 	
 	
