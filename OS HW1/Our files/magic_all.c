@@ -1,9 +1,9 @@
 //new magic syscalls
 #include <string.h>
-#include <sys/types.h>
-#include <linux/types.h>
-#include <linux/sched.h>
-#include <linux/list.h>
+//#include <sys/types.h>
+#include "linux/types.h"
+#include "linux/sched.h"
+#include "linux/list.h"
 #define SECRET_MAXSIZE 32
 
 
@@ -12,7 +12,7 @@ struct secrets_list {
 	list_t node;
 };
 
-typedef secrets_list secrets_list_t;
+typedef struct secrets_list secrets_list_t;
 
 
 
@@ -29,7 +29,7 @@ int max(int a, int b) {
 
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
-	task_t* p = current;
+	task_struct* p = current;
 
 	/*=========== error checks ===========*/
 	if (p->holding_wand) {
@@ -56,7 +56,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 		}
 	}
 
-	p->my_secret = (char*)malloc(sizeof(char)*(len)); // problem: is it 32 or 32 + 1 ? , also malloc or kmalloc?
+	p->my_secret = kmalloc(sizeof(char)*(len), GFP_KERNEL); // problem: is it 32 or 32 + 1 ? ,  kmalloc!
 
 	if (p->my_secret == NULL) {
 		return -4; // fail, error in malloc
@@ -78,12 +78,12 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 	return 0; // success
 }
-
+//fix includes from linux
 int sys_magic_attack(pid_t pid) {
 	
-	task_t* attacker = current;
+	struct task_struct* attacker = current;
 
-	task_t* target = find_task_by_pid(pid);// found in /include/linux/sched.h
+	struct task_struct* target = find_task_by_pid(pid);// found in /include/linux/sched.h
 
 
 	/*=========== error checks ===========*/
@@ -108,13 +108,12 @@ int sys_magic_attack(pid_t pid) {
 
 	/*=========== check for if my_secret is already stolen ===========*/ // problem: check syntax later ?
 
-	list_t* iterator;
+	secrets_list_t *iterator;
 
-	list_for_each(iterator, target->secrets_ptr) {
+	list_for_each(iterator, &target.secrets_ptr, secrets_ptr) {
 
-		secrets_list_t* current = list_entry(iterator,secrets_list_t, node); // problem : maybe current is save word in linux?
-
-		if (!strcmp(current->secret, attacker->my_secret)) {
+		secrets_list_t *current_secret = list_entry(iterator, secrets_list_t, node);
+		if (!strcmp(&current_secret.secret, &attacker.my_secret)) {
 			return -5; // target already has stolen attackers secret.
 		}
 	};
@@ -129,7 +128,7 @@ int sys_magic_attack(pid_t pid) {
 
 	return target->health;
 }
-
+//fix task_t include
 int sys_magic_legilimens(pid_t pid) {
 
 	task_t* attacker = current;
@@ -157,7 +156,7 @@ int sys_magic_legilimens(pid_t pid) {
 	/* add target's secret to attackers list using */
 	secrets_list_t new_secret;
 	new_secret.secret = target->my_secret;// maybe need to malloc this?
-	//dont forgt emonem error check
+	//dont forget emonem error check
 	LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
 
 	list_add_tail(&new_secret.node, attacker->secrets_ptr);
@@ -191,8 +190,6 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
     ptr = p->secrets_ptr.next ; // itrator for list secrets 
     for (int i = 0; i < size; i++) {
 		
-		--counter; // may need to move to end (what if counter=1)
-
 		if (!(counter)) {
 
 			for (int j = list_len; j < size; j++) { // fill the rest with empty strings
@@ -202,17 +199,15 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		}
 		
 		/*copy i secret using entry + head.next*/
-		
+		//check user-kernel copying methods
         secrets_list_t* cur_entry ;
         cur_entry = list_entry(ptr, secrets_list_t, node); // use list macro "list_entry"
-        strcpy(&secrets[i][32],cur_entry->secret);
+        strcpy(&secrets[i][],cur_entry->secret);// maybe add max size in string
         // check success of strcpy
         ptr = ptr->next ;
+		--counter; // may need to move to end (what if counter=1)
+
 	}
 	
-	
-	
-
-
 	return (list_len-size); // success | problem : if list_len is shorter than size, what do we return?
 }
