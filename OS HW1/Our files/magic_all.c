@@ -4,6 +4,8 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/list.h>
+#include <linux/slab.h>
+#include <linux/gfp.h>
 #define SECRET_MAXSIZE 32
 
 
@@ -129,12 +131,12 @@ int sys_magic_attack(pid_t pid) {
 
 	return target->health;
 }
-//fix task_t include
+//need to update my_secret to a pointer type instead.
 int sys_magic_legilimens(pid_t pid) {
 
-	task_t* attacker = current;
+	struct task_struct* attacker = current;
 
-	task_t* target = find_task_by_pid(pid);
+	struct task_struct* target = find_task_by_pid(pid);
 
 	/*=========== error checks ===========*/
 
@@ -201,13 +203,13 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		
 		/*copy i secret using entry + head.next*/
 		//check user-kernel copying methods
-        secrets_list_t* cur_entry ;
+        secrets_list_t* cur_entry;
         cur_entry = list_entry(ptr, secrets_list_t, node); // use list macro "list_entry"
-        strcpy(&secrets[i][],cur_entry->secret);// maybe add max size in string
+        strcpy(&secrets[i][], cur_entry->secret);// maybe add max size in string
         // check success of strcpy
-        ptr = ptr->next ;
-		--counter; // may need to move to end (what if counter=1)
+        ptr = ptr->next;
 
+		--counter;
 	}
 	
 	return (list_len-size); // success | problem : if list_len is shorter than size, what do we return?

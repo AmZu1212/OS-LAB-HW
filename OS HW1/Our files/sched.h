@@ -28,8 +28,8 @@ extern unsigned long event;
 #include <linux/fs_struct.h>
 #include <linux/low-latency.h>
 /* our changes */
-#include <linux/list.h>//maybe not needed
-/* our changes END*/
+#include <linux/list.h>
+/* our changes end */
 struct exec_domain;
 
 /*

@@ -716,9 +716,10 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	p->exit_signal = clone_flags & CSIGNAL;
 	p->pdeath_signal = 0;
 
-	/*   our changes */
-	p->holding_wand = 0;	
-	/* end our changes */
+	/*	our changes	*/
+	p->holding_wand = 0;
+	p->my_secret = NULL;
+	/*	end our changes	*/
 
 	/*
 	 * Share the timeslice between parent and child, thus the
