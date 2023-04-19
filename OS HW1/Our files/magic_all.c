@@ -1,9 +1,9 @@
 //new magic syscalls
 #include <linux/string.h>
 //#include <sys/types.h>
-#include "linux/types.h"
-#include "linux/sched.h"
-#include "linux/list.h"
+#include <linux/types.h>
+#include <linux/sched.h>
+#include <linux/list.h>
 #define SECRET_MAXSIZE 32
 
 
@@ -17,7 +17,7 @@ typedef struct secrets_list secrets_list_t;
 
 
 
-int max(int a, int b) {
+int maxx(int a,int b ){
 
 	if (a > b) {
 		return a;
@@ -29,7 +29,8 @@ int max(int a, int b) {
 
 int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	
-	task_struct* p = current;
+	struct task_struct* p ;
+	p = current;
 
 	/*=========== error checks ===========*/
 	if (p->holding_wand) {

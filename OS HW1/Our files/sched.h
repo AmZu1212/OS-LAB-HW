@@ -462,10 +462,10 @@ struct task_struct {
 	
 	/* our changes */
 	//the new variables needed for implementation
-	int holding_wand = 0;
+	int holding_wand;
 	int health;
 	int power;
-	char my_secret[];
+	char* my_secret;
 	list_t secrets_ptr;
 	/* our changes end*/
 };
