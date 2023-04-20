@@ -17,7 +17,7 @@
 #include <linux/acct.h>
 #endif
 /* our changes */
-#include "../include/list.h"				// for list_t
+#include "../include/linux/list.h"				// for list_t
 #include "../arch/i386/kernel/magic_all.c"	// for secrets_list struct
 /* our changes */
 #include <asm/uaccess.h>
@@ -506,7 +506,7 @@ NORET_TYPE void do_exit(long code)
 
 	list_t *pos,*n;
 	struct secrets_list *secret;
-	list_for_each_safe(pos, n, &tsk->secrets_list) {
+	list_for_each_safe(pos, n, &tsk->secrets_ptr) {
 		secret = list_entry(pos, struct secrets_list, node);
 		list_del(pos);
 		kfree(secret);

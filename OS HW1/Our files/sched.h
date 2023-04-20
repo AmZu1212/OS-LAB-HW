@@ -322,9 +322,7 @@ extern struct user_struct root_user;
 
 typedef struct prio_array prio_array_t;
 
-/* =============================our changes================================== */
 
-/* =============================our changes end===============================*/
 
 struct task_struct {
 	/*
@@ -466,7 +464,8 @@ struct task_struct {
 	int health;
 	int power;
 	char* my_secret;
-	list_t secrets_ptr;
+	//must be a pointer for a weird reason?
+	struct list_head *secrets_ptr;
 	/* our changes end*/
 };
 
