@@ -15,9 +15,6 @@ struct secrets_list {
 
 typedef struct secrets_list secrets_list_t;
 
-
-
-
 int maxx(int a,int b ){
 
 	if (a > b) {
@@ -130,7 +127,7 @@ int sys_magic_attack(pid_t pid) {
 
 	return target->health;
 }
-//need to update my_secret to a pointer type instead.
+//need to update my_secret to a pointer type instead. (done)
 int sys_magic_legilimens(pid_t pid) {
 
 	struct task_struct* attacker = current;
