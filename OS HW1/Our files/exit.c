@@ -504,12 +504,13 @@ NORET_TYPE void do_exit(long code)
 	/* our changes */
 	kfree(tsk->my_secret);
 
-	list_t *pos,*n;
-	struct secrets_list *secret;
-	list_for_each_safe(pos, n, &tsk->secrets_ptr) {
-		secret = list_entry(pos, struct secrets_list, node);
-		list_del(pos);
-		kfree(secret);
+	struct list_head *iterator,*tmp;
+	struct list_head *secrets = tsk->secrets_ptr;
+	struct secrets_list *current_secret; 
+	list_for_each_safe(iterator, tmp, secrets) {
+		current_secret = list_entry(iterator, struct secrets_list, list);
+		list_del(iterator);
+		kfree(current_secret);
 	}
 
 	/* end our changes */

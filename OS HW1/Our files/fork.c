@@ -719,6 +719,7 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	/*	our changes	*/
 	p->holding_wand = 0;
 	p->my_secret = NULL;
+	p->secrets_ptr = kmalloc(sizeof(struct list_head), GFP_KERNEL);
 	/*	end our changes	*/
 
 	/*

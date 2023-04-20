@@ -3,18 +3,17 @@
 #include <linux/string.h>	// for strcmp, etc.
 #include <linux/types.h>	// idk honestly
 #include "../../../include/linux/sched.h"	// for struct task_Struct
-#include <linux/list.h>		// for list_t
+#include "../../../include/linux/list.h"		// for list_t
 #include <linux/slab.h>		// for kmalloc,GFP_KERNEL
 //#include <linux/gfp.h>	// for GFP_KERNEL
 #define SECRET_MAXSIZE 32
 
 
 struct secrets_list {
+	struct list_head list ;
 	char secret[SECRET_MAXSIZE];
-	list_t node;
 };
 
-typedef struct secrets_list secrets_list_t;
 
 int maxx(int a,int b ){
 
@@ -71,7 +70,9 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 	 
 	/*=========== the rest of the variables ===========*/
-	INIT_LIST_HEAD(&p.secrets_ptr);
+	struct list_head new_head;
+	INIT_LIST_HEAD(&new_head);
+	p->secrets_ptr = &new_head;
 	p->power = power;
 	p->holding_wand = 1;
 	p->health = 100;
@@ -108,12 +109,14 @@ int sys_magic_attack(pid_t pid) {
 
 	/*=========== check for if my_secret is already stolen ===========*/ // problem: check syntax later ?
 
-	secrets_list_t *iterator;
+	struct list_head *iterator;
+	struct list_head *tmp ;
+	struct list_head *secrets = target->secrets_ptr;
 
-	list_for_each(iterator, &target.secrets_ptr, secrets_ptr) {
+	list_for_each_safe(iterator, tmp, secrets) {
 
-		secrets_list_t *current_secret = list_entry(iterator, secrets_list_t, node);
-		if (!strcmp(&current_secret.secret, &attacker.my_secret)) {
+		struct secrets_list *current_secret = list_entry(iterator, struct secrets_list, list);
+		if (!strcmp(current_secret->secret, attacker->my_secret)) {
 			return -5; // target already has stolen attackers secret.
 		}
 	};
@@ -154,12 +157,13 @@ int sys_magic_legilimens(pid_t pid) {
 
 	//problem: a bunch of stuff
 	/* add target's secret to attackers list using */
-	secrets_list_t new_secret;
-	new_secret.secret = target->my_secret;// maybe need to malloc this?
+	struct secrets_list new_secret;
+	//new_secret->secret = target->my_secret;// maybe need to malloc this?
+	strcpy(new_secret.secret,target->my_secret); // 
 	//dont forget emonem error check
-	LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
+	//LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
 
-	list_add_tail(&new_secret.node, attacker->secrets_ptr);
+	list_add_tail(&new_secret.list, attacker->secrets_ptr);
 
 
 	return 0; // success
@@ -179,7 +183,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		list_len++;
 	}
 
-	if (size = 0) { // returns size of secrets list
+	if (size == 0) { // returns size of secrets list
 		return list_len;
 	}
 
@@ -187,22 +191,23 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 	int counter = list_len;
 
     list_t *ptr;
-    ptr = p->secrets_ptr.next ; // itrator for list secrets 
-    for (int i = 0; i < size; i++) {
+    ptr = p->secrets_ptr->next ; // itrator for list secrets 
+    int i ;
+    for ( i = 0; i < size; i++) {
 		
 		if (!(counter)) {
-
-			for (int j = list_len; j < size; j++) { // fill the rest with empty strings
-				strcpy(secrets[j][], "");
+			int j;
+			for ( j = list_len; j < size; j++) { // fill the rest with empty strings
+				strcpy(secrets[j], "");
 			}
 			break;
 		}
 		
 		/*copy i secret using entry + head.next*/
 		//check user-kernel copying methods
-        secrets_list_t* cur_entry;
-        cur_entry = list_entry(ptr, secrets_list_t, node); // use list macro "list_entry"
-        strcpy(&secrets[i][], cur_entry->secret);// maybe add max size in string
+        struct secrets_list *cur_entry;
+        cur_entry = list_entry(ptr, struct secrets_list, list); // use list macro "list_entry"
+        strcpy(secrets[i], cur_entry->secret);// maybe add max size in string
         // check success of strcpy
         ptr = ptr->next;
 

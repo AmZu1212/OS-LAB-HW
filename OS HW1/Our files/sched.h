@@ -465,7 +465,7 @@ struct task_struct {
 	int power;
 	char* my_secret;
 	//must be a pointer for a weird reason?
-	struct list_head *secrets_ptr;
+	struct list_head* secrets_ptr;
 	/* our changes end*/
 };
 
