@@ -1,6 +1,6 @@
 //magic_api.h
 //warper functions		
-#include <include/linux/errno.h> 
+#include <include/linux/errno.h> // for error #s's
 #define SECRET_MAXSIZE 32 
 
 int magic_get_wand(int power, char secret[SECRET_MAXSIZE])

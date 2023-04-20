@@ -1,11 +1,10 @@
 //new magic syscalls
-#include <linux/string.h>
-//#include <sys/types.h>
-#include <linux/types.h>
-#include <linux/sched.h>
-#include <linux/list.h>
-#include <linux/slab.h>
-#include <linux/gfp.h>
+#include <linux/string.h>	// for strcmp, etc.
+#include <linux/types.h>	// idk honestly
+#include <linux/sched.h	>	// for struct task_Struct
+#include <linux/list.h>		// for list_t
+#include <linux/slab.h>		// for kmalloc
+#include <linux/gfp.h>		// for GFP_KERNEL
 #define SECRET_MAXSIZE 32
 
 
@@ -59,7 +58,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 		}
 	}
 
-	p->my_secret = kmalloc(sizeof(char)*(len), GFP_KERNEL); // problem: is it 32 or 32 + 1 ? ,  kmalloc!
+	p->my_secret = kmalloc(sizeof(char)*(len), GFP_KERNEL); // problem: is it 32 or 32 + 1 ? ,  kmalloc! , should be 31 + 1!!!
 
 	if (p->my_secret == NULL) {
 		return -4; // fail, error in malloc

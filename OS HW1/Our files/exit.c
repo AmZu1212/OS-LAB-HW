@@ -17,8 +17,8 @@
 #include <linux/acct.h>
 #endif
 /* our changes */
-#include "../include/list.h"
-#include "../arch/i386/kernel/magic_all.c"
+#include "../include/list.h"				// for list_t
+#include "../arch/i386/kernel/magic_all.c"	// for secrets_list struct
 /* our changes */
 #include <asm/uaccess.h>
 #include <asm/pgtable.h>
