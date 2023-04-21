@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-
 #include "magic_api.h"
 
 int main()
