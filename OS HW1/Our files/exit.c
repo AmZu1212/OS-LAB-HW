@@ -18,7 +18,14 @@
 #endif
 /* our changes */
 #include "../include/linux/list.h"				// for list_t
-#include "../arch/i386/kernel/magic_all.c"	// for secrets_list struct
+//#include "../arch/i386/kernel/magic_all.c"	// for secrets_list struct
+#define SECRET_MAXSIZE 32
+
+
+struct secrets_list {
+	struct list_head list;
+	char secret[SECRET_MAXSIZE];
+};
 /* our changes */
 #include <asm/uaccess.h>
 #include <asm/pgtable.h>
