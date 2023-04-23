@@ -154,7 +154,7 @@ int sys_magic_legilimens(pid_t pid) {
 	}
 	/* check if attacker already has target's secret. (return -3)*/
 	
-	struct list_head* iterator = secrets_ptr->next;
+	struct list_head* iterator = attacker->secrets_ptr->next;
 	struct secrets_list* current_secret;
 	while (iterator != attacker->secrets_ptr) {
 
@@ -205,8 +205,9 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 	int counter = list_len;
 
 	struct list_head *ptr;
-    ptr = p->secrets_ptr->next ; // itrator for list secrets 
-    int i ;
+    ptr = p->secrets_ptr->next ; // iterator for list secrets 
+    int i;
+	int stolen = 0;//=================================================================================
     for ( i = 0; i < size; i++) {
 		
 		if (!(counter)) {
@@ -222,11 +223,12 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
         struct secrets_list *cur_entry;
         cur_entry = list_entry(ptr, struct secrets_list, list);
         strcpy(secrets[i], cur_entry->secret);// maybe add max size in string
+		stolen++;//=======================================================================================
         // check success of strcpy
         ptr = ptr->next;
 
 		--counter;
 	}
 	
-	return (list_len-size); // success | problem : if list_len is shorter than size, what do we return?
+	return (list_len-stolen); // success | problem : if list_len is shorter than size, what do we return? //=================================
 }

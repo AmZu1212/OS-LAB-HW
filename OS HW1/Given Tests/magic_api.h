@@ -170,15 +170,18 @@ int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
 	 if (res < 0) {
 		 switch (res) {
 		 case -1:
+			 printf("Secrets is NULL or error writing to user buffer\n");
 			 errno = EFAULT; // secrets is NULL or error writing to user buffer
 			 break;
 
 		 case -2:
+			 printf("The current process doesn’t have a wand\n");
 			 errno = EPERM; // The current process doesn’t have a wand
 			 break;
 
 		 
 		 case -4:
+			 printf("Cannot allocate memory\n");
 			 errno = ENOMEM; // Cannot allocate memory
 			 break;
 

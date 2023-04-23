@@ -26,7 +26,9 @@ int main()
 
     res = magic_list_secrets(secrets, 5);
     assert(res == 0);
-    assert(strnlen(secrets[0], SECRET_MAXSIZE) == 0);
+    int length = strlen(secrets[0]);
+    printf("length is: %d\n", length);
+    assert(length == SECRET_MAXSIZE);
 
 	return 0;
 }
