@@ -509,6 +509,7 @@ NORET_TYPE void do_exit(long code)
 	del_timer_sync(&tsk->real_timer);
 
 	/* our changes */
+	printk("entering exit.c changes\n");
 	kfree(tsk->my_secret);
 
 	struct list_head *iterator,*tmp;
@@ -519,6 +520,7 @@ NORET_TYPE void do_exit(long code)
 		list_del(iterator);
 		kfree(current_secret);
 	}
+	printk("exiting exit.c changes\n");
 
 	/* end our changes */
 
