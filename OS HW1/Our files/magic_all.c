@@ -152,14 +152,28 @@ int sys_magic_legilimens(pid_t pid) {
 		target->holding_wand == 0) {
 		return -2; // one of the processes isnt holding any wand.
 	}
-	/* check if attacker already has target's secret. (return -3)*/ // maybe make it a function
+	/* check if attacker already has target's secret. (return -3)*/
+	
+	struct list_head* iterator = secrets_ptr->next;
+	struct secrets_list* current_secret;
+	while (iterator != attacker->secrets_ptr) {
 
+		current_secret = list_entry(iterator, struct secrets_list, list);
 
-	//problem: a bunch of stuff
+		if (!strcmp(current_secret->secret, attacker->my_secret)) {
+			//attacker already stole this target's secret
+			return -3;
+		}
+		iterator = iterator->next;
+
+	}
+
 	/* add target's secret to attackers list using */
 	struct secrets_list new_secret;
-	//new_secret->secret = target->my_secret;// maybe need to malloc this?
-	strcpy(new_secret.secret,target->my_secret); // 
+
+	strcpy(new_secret.secret,target->my_secret);
+
+
 	//dont forget emonem error check
 	//LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
 
@@ -172,11 +186,11 @@ int sys_magic_legilimens(pid_t pid) {
 int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 	
-	task_t* p = current;
+	struct task_struct* p = current;
 
 	int list_len = 0;
 
-	list_t* iterator;
+	struct list_head* iterator;
 
 	list_for_each(iterator, p->secrets_ptr) {
 
@@ -190,7 +204,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 	int counter = list_len;
 
-    list_t *ptr;
+	struct list_head *ptr;
     ptr = p->secrets_ptr->next ; // itrator for list secrets 
     int i ;
     for ( i = 0; i < size; i++) {
@@ -206,7 +220,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		/*copy i secret using entry + head.next*/
 		//check user-kernel copying methods
         struct secrets_list *cur_entry;
-        cur_entry = list_entry(ptr, struct secrets_list, list); // use list macro "list_entry"
+        cur_entry = list_entry(ptr, struct secrets_list, list);
         strcpy(secrets[i], cur_entry->secret);// maybe add max size in string
         // check success of strcpy
         ptr = ptr->next;

@@ -511,18 +511,19 @@ NORET_TYPE void do_exit(long code)
 	/* our changes */
 	printk("entering exit.c\n");
 	
-	struct list_head* iterator = secrets_ptr->next;
+	struct list_head* iterator = tsk->secrets_ptr->next;
 	struct secrets_list* current_secret;
 	int delCount = 0;
-	while (iterator != secrets_ptr) {
-		printk("entered while loop for list deletion\n");
-		current_secret = list_entry(iterator, struct secrets_list, list);
-		iterator = iterator->next;
-		list_del(&current_secret->list);
-		delCount++;
-		printk("so far deleted [%d] items\n");
-		kfree(current_secret);
-	}
+
+	//while (iterator != tsk->secrets_ptr) {
+	//	printk("entered while loop for list deletion\n");
+	//	current_secret = list_entry(iterator, struct secrets_list, list);
+	//	iterator = iterator->next;
+	//	list_del(&current_secret->list);
+	//	delCount++;
+	//	printk("so far deleted [%d] items\n");
+	//	kfree(current_secret);
+	//}
 	kfree(tsk->my_secret);
 	kfree(tsk->secrets_ptr);
 
