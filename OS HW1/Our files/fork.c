@@ -716,12 +716,16 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	p->exit_signal = clone_flags & CSIGNAL;
 	p->pdeath_signal = 0;
 
-	/*	our changes	*/
-	printk("entering new fork.c\n");
+	/* our changes */
+	printk("entering fork.c\n)
 	p->holding_wand = 0;
 	p->my_secret = NULL;
 	p->secrets_ptr = kmalloc(sizeof(struct list_head), GFP_KERNEL);
-	printk("exiting new fork.c\n");
+	if (p->secrets_ptr == NULL) {
+		printk("kmalloc() failed inside fork.c\n");
+		return -ENOMEM;
+	}
+	printk("exiting fork.c\n");
 
 
 	/*	end our changes	*/
