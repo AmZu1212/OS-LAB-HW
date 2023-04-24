@@ -4,7 +4,7 @@
 #include "../../../include/linux/sched.h"	// for struct task_struct
 #include "../../../include/linux/list.h"	// for list_t
 #include <linux/slab.h>						// for kmalloc, GFP_KERNEL
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #define SECRET_MAXSIZE 32
 
 struct secrets_list {
