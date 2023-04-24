@@ -123,7 +123,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 *		EHOSTDOWN    [-3] | Either the sender or target process health is 0
 *		ENOMEM       [-4] | Cannot allocate memory
 *		ECONNREFUSED [-5] | Target process is the current process or has 
-*							stolen the current process wand secret
+*                           stolen the current process wand secret
 */
 int sys_magic_attack(pid_t pid) {
 	
