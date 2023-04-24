@@ -5,6 +5,7 @@
 #include "../../../include/linux/sched.h"	// for struct task_Struct
 #include "../../../include/linux/list.h"		// for list_t
 #include <linux/slab.h>		// for kmalloc,GFP_KERNEL
+#include <linux/uaccess.h>
 //#include <linux/gfp.h>	// for GFP_KERNEL
 #define SECRET_MAXSIZE 32
 
@@ -70,9 +71,15 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 
 	 
 	/*=========== the rest of the variables ===========*/
-	struct list_head new_head;
-	INIT_LIST_HEAD(&new_head);
-	p->secrets_ptr = &new_head;
+	//struct list_head *new_head;
+	//new_head = kmalloc(sizeof(struct list_head), GFP_KERNEL);
+	//if (new_head == NULL) {
+	//	return -4; // fail, error in malloc
+	//}
+
+	//INIT_LIST_HEAD(new_head);
+
+	//p->secrets_ptr = new_head;
 	p->power = power;
 	p->holding_wand = 1;
 	p->health = 100;
@@ -141,19 +148,21 @@ int sys_magic_legilimens(pid_t pid) {
 	/*=========== error checks ===========*/
 
 	if (target == attacker) {
-		return 0; // attacker is also target, so nothing happens.
+		// attacker is also target, so nothing happens.
+		return 0; 
 	}
 
 	if (target == NULL) {
-		return -1; // pid doesnt exist
+		// pid doesnt exist
+		return -1; 
 	}
 
 	if (attacker->holding_wand == 0 ||
 		target->holding_wand == 0) {
 		return -2; // one of the processes isnt holding any wand.
 	}
+
 	/* check if attacker already has target's secret. (return -3)*/
-	
 	struct list_head* iterator = attacker->secrets_ptr->next;
 	struct secrets_list* current_secret;
 	while (iterator != attacker->secrets_ptr) {
@@ -170,13 +179,7 @@ int sys_magic_legilimens(pid_t pid) {
 
 	/* add target's secret to attackers list using */
 	struct secrets_list new_secret;
-
 	strcpy(new_secret.secret,target->my_secret);
-
-
-	//dont forget emonem error check
-	//LIST_HEAD_INIT(new_secret.node); // maybe not even needed?
-
 	list_add_tail(&new_secret.list, attacker->secrets_ptr);
 
 
@@ -187,6 +190,10 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 	
 	struct task_struct* p = current;
+	if (p->holding_wand == 0 || secrets == NULL) {
+		//process not holding a wand or secret is null
+		return -2;
+	}
 
 	int list_len = 0;
 
@@ -222,7 +229,13 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		//check user-kernel copying methods
         struct secrets_list *cur_entry;
         cur_entry = list_entry(ptr, struct secrets_list, list);
-        strcpy(secrets[i], cur_entry->secret);// maybe add max size in string
+		
+		if (copy_to_user(secrets[i], cur_entry->secret, SECRET_MAXSIZE)) {
+		//copy_to_user() failed...
+			return -1;
+		}
+
+		
 		stolen++;//=======================================================================================
         // check success of strcpy
         ptr = ptr->next;

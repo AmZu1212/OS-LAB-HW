@@ -720,11 +720,20 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	printk("entering fork.c\n");
 	p->holding_wand = 0;
 	p->my_secret = NULL;
-	p->secrets_ptr = kmalloc(sizeof(struct list_head), GFP_KERNEL);
-	if (p->secrets_ptr == NULL) {
+	//p->secrets_ptr = kmalloc(sizeof(struct list_head), GFP_KERNEL);
+	//if (p->secrets_ptr == NULL) {
+	//	printk("kmalloc() failed inside fork.c\n");
+	//	return -ENOMEM;
+	//}
+	struct list_head* new_head;
+	new_head = kmalloc(sizeof(struct list_head), GFP_KERNEL);
+	if (new_head == NULL) {
 		printk("kmalloc() failed inside fork.c\n");
 		return -ENOMEM;
 	}
+
+	INIT_LIST_HEAD(new_head);
+	p->secrets_ptr = new_head;
 	printk("exiting fork.c\n");
 
 

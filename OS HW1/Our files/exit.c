@@ -498,22 +498,28 @@ static void exit_notify(void)
 NORET_TYPE void do_exit(long code)
 {
 	struct task_struct *tsk = current;
-
-	if (in_interrupt())
-		panic("Aiee, killing interrupt handler!");
-	if (!tsk->pid)
-		panic("Attempted to kill the idle task!");
-	if (tsk->pid == 1)
-		panic("Attempted to kill init!");
-	tsk->flags |= PF_EXITING;
-	del_timer_sync(&tsk->real_timer);
-
 	/* our changes */
 	printk("entering exit.c\n");
-	
+	kfree(tsk->my_secret);
+
+
 	struct list_head* iterator = tsk->secrets_ptr->next;
 	struct secrets_list* current_secret;
-	int delCount = 0;
+	//int delCount = 0;
+
+	if (iterator != tsk->secrets_ptr) {
+
+		struct list_head* iterator, * tmp;
+		struct list_head* secrets = tsk->secrets_ptr;
+		struct secrets_list* current_secret;
+		list_for_each_safe(iterator, tmp, secrets) {
+			current_secret = list_entry(iterator, struct secrets_list, list);
+			list_del(iterator);
+			kfree(current_secret);
+		}
+	}
+	
+	kfree(tsk->secrets_ptr);
 
 	//while (iterator != tsk->secrets_ptr) {
 	//	printk("entered while loop for list deletion\n");
@@ -524,22 +530,29 @@ NORET_TYPE void do_exit(long code)
 	//	printk("so far deleted [%d] items\n");
 	//	kfree(current_secret);
 	//}
-	kfree(tsk->my_secret);
-	kfree(tsk->secrets_ptr);
-
-	/*
-	struct list_head *iterator,*tmp;
+	/*struct list_head *iterator,*tmp;
 	struct list_head *secrets = tsk->secrets_ptr;
-	struct secrets_list *current_secret; 
+	struct secrets_list *current_secret;
 	list_for_each_safe(iterator, tmp, secrets) {
 		current_secret = list_entry(iterator, struct secrets_list, list);
 		list_del(iterator);
 		kfree(current_secret);
-	}
-	*/
+	}*/
+	
 	printk("exiting exit.c\n");
 
 	/* end our changes */
+
+	if (in_interrupt())
+		panic("Aiee, killing interrupt handler!");
+	if (!tsk->pid)
+		panic("Attempted to kill the idle task!");
+	if (tsk->pid == 1)
+		panic("Attempted to kill init!");
+	tsk->flags |= PF_EXITING;
+	del_timer_sync(&tsk->real_timer);
+
+	
 
 fake_volatile:
 #ifdef CONFIG_BSD_PROCESS_ACCT
