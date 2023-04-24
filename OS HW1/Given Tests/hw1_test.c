@@ -7,13 +7,14 @@
 #include <errno.h>
 #include "magic_api.h"
 
-int my_strnlen(const char* str, int max_len) {
+int my_strnlen(const char* str, size_t max_len) {
     int len = 0;
     while (len < max_len && str[len] != '\0') {
         len++;
     }
     return len;
 }
+
 
 int main()
 {
@@ -34,9 +35,9 @@ int main()
 
     res = magic_list_secrets(secrets, 5);
     assert(res == 0);
-    int length = strlen(secrets[0]);//
-    printf("length is: %d\n", length);//
-    assert(my_strnlen(secrets[0], SECRET_MAXSIZE) == 0);
+    int length = strlen(secrets[0]);
+    printf("length is: %d\n", length);
+    assert(my_strnlen(secrets[0],SECRET_MAXSIZE) == 0);
 
 	return 0;
 }
