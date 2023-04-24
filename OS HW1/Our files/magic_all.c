@@ -120,8 +120,8 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 *		EPERM        [-2] | Either the sender or pid doesnt have a wand
 *		EHOSTDOWN    [-3] | Either the sender or target process health is 0
 *		ENOMEM       [-4] | Cannot allocate memory
-*		ECONNREFUSED [-5] | Target process is the current process or 
-*							has stolen the current process wand secret
+*		ECONNREFUSED [-5] | Target process is the current process or has 
+*							stolen the current process wand secret
 */
 int sys_magic_attack(pid_t pid) {
 	
