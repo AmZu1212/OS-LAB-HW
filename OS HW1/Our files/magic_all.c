@@ -12,6 +12,8 @@ struct secrets_list {
 	char secret[SECRET_MAXSIZE];
 };
 
+
+/*==== Functions ====*/
 /*	
 *	Basically didnt want to include math.h...
 *	so we made our own. returns the bigger number between {a,b}
