@@ -1,7 +1,5 @@
 //magic_api.h, user warper functions
-#include <include/linux/errno.h>	// for error defines
 #define SECRET_MAXSIZE 32 
-
 
 /*
 *	Attach a wand to the current process with the given power level and

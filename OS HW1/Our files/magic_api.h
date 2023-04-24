@@ -1,7 +1,5 @@
 //magic_api.h, user warper functions
-#include <include/linux/errno.h>	// for error defines
 #define SECRET_MAXSIZE 32 
-
 
 /*
 *	Attach a wand to the current process with the given power level and
@@ -22,10 +20,10 @@
 *		ENOMEM [-4] | Cannot allocate memory
 */
 int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
-{ 
+{
 	int res;
-	 __asm__ 
-	( 
+	__asm__
+	(
 		"pushl %%eax;"
 		"pushl %%ebx;"
 		"pushl %%ecx;"
@@ -38,33 +36,34 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 		"popl %%ebx;"
 		"popl %%eax;"
 		: "=m" (res)
-		: "m" (power),"m"(secret) 
-	); 
-	
-	 
+		: "m" (power), "m"(secret)
+	);
+
+
 	if (res < 0) {
 		switch (res) {
 		case -1:
 			// The process already has a wand
-			errno = EEXIST; 
+			errno = EEXIST;
 			break;
 
 		case -2:
 			// Error copying secret from user or secret is NULL
-			errno = EFAULT; 
+			errno = EFAULT;
 			break;
 
 		case -3:
 			// Length of secret is zero
-			errno = EINVAL; 
+			errno = EINVAL;
 			break;
 
 		case -4:
 			// Cannot allocate memory
-			errno = ENOMEM; 
+			errno = ENOMEM;
 			break;
 		}
-	} else {
+	}
+	else {
 
 		return res; // SUCCESS
 	}
@@ -92,10 +91,10 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 *							has stolen the current process wand secret
 */
 int magic_attack(pid_t pid)
-{ 
+{
 	int res;
-	 __asm__ 
-	( 
+	__asm__
+	(
 		"pushl %%eax;"
 		"pushl %%ebx;"
 		"movl $244, %%eax;"
@@ -105,45 +104,45 @@ int magic_attack(pid_t pid)
 		"popl %%ebx;"
 		"popl %%eax;"
 		: "=m" (res)
-		: "m" (pid) 
-	); 
-	
-	 if (res < 0) {
-		 switch (res) {
-		 case -1:
-			 // The process PID doesnt exist
-			 errno = ESRCH; 
-			 break;
+		: "m" (pid)
+	);
 
-		 case -2:
-			 // Either the sending process or pid doesn’t have a wand
-			 errno = EPERM; 
-			 break;
+	if (res < 0) {
+		switch (res) {
+		case -1:
+			// The process PID doesnt exist
+			errno = ESRCH;
+			break;
 
-		 case -3:
-			 // Either the sending or target process’ health is zero
-			 errno = EHOSTDOWN; 
-			 break;
+		case -2:
+			// Either the sending process or pid doesn’t have a wand
+			errno = EPERM;
+			break;
 
-		 case -4:
-			 // Cannot allocate memory
-			 errno = ENOMEM; 
-			 break;
+		case -3:
+			// Either the sending or target process’ health is zero
+			errno = EHOSTDOWN;
+			break;
 
-		 case -5:
-			 //  Target process is the current process or has
-			 //  stolen the current process’ wand secret
-			 errno = ECONNREFUSED; 
-			 break;
-		 }
-	 }
-	 else {
+		case -4:
+			// Cannot allocate memory
+			errno = ENOMEM;
+			break;
 
-		 return res; // SUCCESS
-	 }
+		case -5:
+			//  Target process is the current process or has
+			//  stolen the current process’ wand secret
+			errno = ECONNREFUSED;
+			break;
+		}
+	}
+	else {
 
-	 res = -1;
-	 return res; // FAIL
+		return res; // SUCCESS
+	}
+
+	res = -1;
+	return res; // FAIL
 }
 
 /*
@@ -162,10 +161,10 @@ int magic_attack(pid_t pid)
 *		EFAULT [-5] | Error writing to user buffer
 */
 int magic_legilimens(pid_t pid)
-{ 
+{
 	int res;
-	 __asm__ 
-	( 
+	__asm__
+	(
 		"pushl %%eax;"
 		"pushl %%ebx;"
 		"movl $245, %%eax;"
@@ -175,44 +174,44 @@ int magic_legilimens(pid_t pid)
 		"popl %%ebx;"
 		"popl %%eax;"
 		: "=m" (res)
-		: "m" (pid) 
-	); 
-	
-	 if (res < 0) {
-		 switch (res) {
-		 case -1:
-			 // The process PID doesnt exist
-			 errno = ESRCH; 
-			 break;
+		: "m" (pid)
+	);
 
-		 case -2:
-			 // Either the sending process or pid doesn’t have a wand
-			 errno = EPERM; 
-			 break;
+	if (res < 0) {
+		switch (res) {
+		case -1:
+			// The process PID doesnt exist
+			errno = ESRCH;
+			break;
 
-		 case -3:
-			 // Secret for pid was already read
-			 errno = EEXIST; 
-			 break;
+		case -2:
+			// Either the sending process or pid doesn’t have a wand
+			errno = EPERM;
+			break;
 
-		 case -4:
-			 // Cannot allocate memory
-			 errno = ENOMEM; 
-			 break;
-		 
-		 case -5:
-			 // Error writing to user buffer
-			 errno = EFAULT; 
-			 break;
-		 }
-	 }
-	 else {
+		case -3:
+			// Secret for pid was already read
+			errno = EEXIST;
+			break;
 
-		 return res; // SUCCESS
-	 }
+		case -4:
+			// Cannot allocate memory
+			errno = ENOMEM;
+			break;
 
-	 res = -1;
-	 return res; // FAIL
+		case -5:
+			// Error writing to user buffer
+			errno = EFAULT;
+			break;
+		}
+	}
+	else {
+
+		return res; // SUCCESS
+	}
+
+	res = -1;
+	return res; // FAIL
 }
 
 /*
@@ -236,10 +235,10 @@ int magic_legilimens(pid_t pid)
 *		ENOMEM [-4] | Cannot allocate memory
 */
 int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
-{ 
+{
 	int res;
-	 __asm__ 
-	( 
+	__asm__
+	(
 		"pushl %%eax;"
 		"pushl %%ebx;"
 		"pushl %%ecx;"
@@ -252,34 +251,34 @@ int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
 		"popl %%ebx;"
 		"popl %%eax;"
 		: "=m" (res)
-		: "m" (secrets),"m"(size) 
-	); 
-	
-	 if (res < 0) {
-		 switch (res) {
-		 case -1:
-			 // secrets is NULL or error writing to user buffer
-			 errno = EFAULT; 
-			 break;
+		: "m" (secrets), "m"(size)
+	);
 
-		 case -2:
-			 // The current process doesn’t have a wand
-			 errno = EPERM; 
-			 break;
+	if (res < 0) {
+		switch (res) {
+		case -1:
+			// secrets is NULL or error writing to user buffer
+			errno = EFAULT;
+			break;
 
-		 
-		 case -4:
-			 // Cannot allocate memory
-			 errno = ENOMEM; 
-			 break;
+		case -2:
+			// The current process doesn’t have a wand
+			errno = EPERM;
+			break;
 
-		 }
-	 }
-	 else {
 
-		 return res; // SUCCESS
-	 }
+		case -4:
+			// Cannot allocate memory
+			errno = ENOMEM;
+			break;
 
-	 res = -1;
-	 return res; // FAIL
+		}
+	}
+	else {
+
+		return res; // SUCCESS
+	}
+
+	res = -1;
+	return res; // FAIL
 }
