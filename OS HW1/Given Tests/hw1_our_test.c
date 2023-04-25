@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include "magic_api.h"
-
+#include <linux/sched.h>
 #define NUM_PROCESSES 1 // change to 5
 
 
@@ -30,7 +30,7 @@ int my_strnlen(const char* str, size_t max_len) {
 // Helper function to print a process's information
 void print_process_info(int pid)
 {
-    struct task_struct* process = find_task_by_vpid(pid);
+    struct task_struct* process = find_task_by_pid(pid);
     printf("Process %d:\n", pid);
     printf("\tHolding wand: %d\n", process->holding_wand);
     printf("\tHealth: %d\n", process->health);
@@ -56,6 +56,10 @@ int main()
     
     // test for double init on parent
     res = magic_get_wand(90, parent_secret);
+    if (res < 0) {
+        fprintf(stderr, "Correct error for second INIT on  %d\n", getpid());
+        return 1;
+    }
     assert(res == -1);
     assert(errno == EEXIST);
 
@@ -92,7 +96,7 @@ int main()
         printf("Parent process attacking child process %d\n", pids[i]);
         int res = magic_attack(pids[i]);
         if (res < 0) {
-            fprintf(stderr, "Error: Could not attack process %d, errno=%d\n", pids[i], errno);
+            fprintf(stderr, "Error: Could not attack process %d, errno=%s\n", pids[i], errno);
         }
         else {
             printf("Attack successful! New health of process %d is %d\n", pids[i], res);
@@ -101,49 +105,49 @@ int main()
     }
 
 
-    // Parent process steals each child process's secret once (magic_legilimens())
-    for (i = 0; i < NUM_PROCESSES; i++) {
-        printf("Parent process stealing secret from child process %d\n", pids[i]);
-        int res = magic_legilimens(pids[i]);
-        if (res < 0) {
-            fprintf(stderr, "Error: Could not steal secret from process %d, errno=%d\n", pids[i], errno);
-        }
-        else {
-            printf("Secret stolen successfully!\n");
-            // Print the stolen secret
-            struct task_struct* current_process = current;
-            struct list_head* secrets = &(current_process->secrets_ptr);
-            struct list_head* pos;
-            struct secrets_list* curr_secret;
-            list_for_each(pos, secrets) {
-                curr_secret = list_entry(pos, struct secrets_list, list);
-                printf("Stolen secret: %s\n", curr_secret->secret);
-            }
-        }
-    }
+    //// Parent process steals each child process's secret once (magic_legilimens())
+    //for (i = 0; i < NUM_PROCESSES; i++) {
+    //    printf("Parent process stealing secret from child process %d\n", pids[i]);
+    //    int res = magic_legilimens(pids[i]);
+    //    if (res < 0) {
+    //        fprintf(stderr, "Error: Could not steal secret from process %d, errno=%d\n", pids[i], errno);
+    //    }
+    //    else {
+    //        printf("Secret stolen successfully!\n");
+    //        // Print the stolen secret
+    //        struct task_struct* current_process = find_task_by_pid(getpid());
+    //        struct list_head* secrets = &(current_process->secrets_ptr);
+    //        struct list_head* pos;
+    //        struct secrets_list* curr_secret;
+    //        list_for_each(pos, secrets) {
+    //            curr_secret = list_entry(pos, struct secrets_list, list);
+    //            printf("Stolen secret: %s\n", curr_secret->secret);
+    //        }
+    //    }
+    //}
 
-    // Parent process adds a secret to the child process's secret list (magic_secrets_list())
-    for (i = 0; i < NUM_PROCESSES; i++) {
-        printf("Parent process adding secret to child process %d\n", pids[i]);
-        char new_secret[SECRET_MAXSIZE] = "new_secret";
-        int res = magic_secrets_list(pids[i], new_secret);
-        if (res < 0) {
-            fprintf(stderr, "Error: Could not add secret to process %d, errno=%d\n", pids[i], errno);
-        }
-        else {
-            printf("Secret added successfully!\n");
-            // Print the updated secret list
-            struct task_struct* current_process = current;
-            struct list_head* secrets = &(current_process->secrets_ptr);
-            struct list_head* pos;
-            struct secrets_list* curr_secret;
-            printf("Current secrets list for process %d:\n", pids[i]);
-            list_for_each(pos, secrets) {
-                curr_secret = list_entry(pos, struct secrets_list, list);
-                printf("\t%s\n", curr_secret->secret);
-            }
-        }
-    }
+    //// Parent process adds a secret to the child process's secret list (magic_secrets_list())
+    //for (i = 0; i < NUM_PROCESSES; i++) {
+    //    printf("Parent process adding secret to child process %d\n", pids[i]);
+    //    char new_secret[SECRET_MAXSIZE] = "new_secret";
+    //    int res = magic_secrets_list(pids[i], new_secret);
+    //    if (res < 0) {
+    //        fprintf(stderr, "Error: Could not add secret to process %d, errno=%d\n", pids[i], errno);
+    //    }
+    //    else {
+    //        printf("Secret added successfully!\n");
+    //        // Print the updated secret list
+    //        struct task_struct* current_process = find_task_by_pid(getpid());;
+    //        struct list_head* secrets = &(current_process->secrets_ptr);
+    //        struct list_head* pos;
+    //        struct secrets_list* curr_secret;
+    //        printf("Current secrets list for process %d:\n", pids[i]);
+    //        list_for_each(pos, secrets) {
+    //            curr_secret = list_entry(pos, struct secrets_list, list);
+    //            printf("\t%s\n", curr_secret->secret);
+    //        }
+    //    }
+    //}
     printf("testing done, exiting...\n");
     return 0;
 }

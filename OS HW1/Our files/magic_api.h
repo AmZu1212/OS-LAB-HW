@@ -111,25 +111,30 @@ int magic_attack(pid_t pid)
 		switch (res) {
 		case -1:
 			// The process PID doesnt exist
+			printf("The process PID doesnt exist\n");
 			errno = ESRCH;
 			break;
 
 		case -2:
+			printf("Either the sending process or pid doesn’t have a wand \n");
 			// Either the sending process or pid doesn’t have a wand
 			errno = EPERM;
 			break;
 
 		case -3:
+			printf("Either the sending or target process’ health is zero \n");
 			// Either the sending or target process’ health is zero
 			errno = EHOSTDOWN;
 			break;
 
 		case -4:
+			printf("Cannot allocate memory \n");
 			// Cannot allocate memory
 			errno = ENOMEM;
 			break;
 
 		case -5:
+			printf("Target process is the current process or has stolen the current process’ wand secret \n");
 			//  Target process is the current process or has
 			//  stolen the current process’ wand secret
 			errno = ECONNREFUSED;
