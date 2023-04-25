@@ -205,7 +205,7 @@ int sys_magic_legilimens(pid_t pid) {
 	/*==== Errors & Checks ====*/
 	if (target == attacker) {
 		// attacker is also target, so nothing happens.
-		return 0;//SUCCESS
+		return 0; // SUCCESS
 	}
 
 	if (target == NULL) {
@@ -239,12 +239,12 @@ int sys_magic_legilimens(pid_t pid) {
 	struct secrets_list *newSec;
 	newSec = kmalloc(sizeof(struct secrets_list), GFP_KERNEL);
 	if (newSec == NULL) {
-		//fail, kmalloc() failed...
+		// fail, kmalloc() failed...
 		return -4;
 	}
 
 	if (copy_to_user(newSec->secret, target->my_secret, SECRET_MAXSIZE)) {
-		//fail, copy_to_user() failed...
+		// fail, copy_to_user() failed...
 		kfree(newSec);
 		return -5;
 	}
