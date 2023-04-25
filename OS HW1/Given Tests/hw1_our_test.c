@@ -144,6 +144,6 @@ int main()
             }
         }
     }
-
+    printf("testing done, exiting...\n");
     return 0;
 }
