@@ -44,21 +44,25 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 		switch (res) {
 		case -1:
 			// The process already has a wand
+			printf("The process already has a wand\n");
 			errno = EEXIST;
 			break;
 
 		case -2:
 			// Error copying secret from user or secret is NULL
+			printf("Error copying secret from user or secret is NULL\n");
 			errno = EFAULT;
 			break;
 
 		case -3:
 			// Length of secret is zero
+			printf("Error copying secret from user or secret is NULL\n");
 			errno = EINVAL;
 			break;
 
 		case -4:
 			// Cannot allocate memory
+			printf("Error copying secret from user or secret is NULL\n");
 			errno = ENOMEM;
 			break;
 		}
