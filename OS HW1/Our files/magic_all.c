@@ -235,7 +235,7 @@ int sys_magic_legilimens(pid_t pid) {
 	}
 
 
-	/*==== Add target's secret to attackers list using ====*/
+	/*==== Add target's secret to attackers list using strcpy? ====*/
 	struct secrets_list *newSec;
 	newSec = kmalloc(sizeof(struct secrets_list), GFP_KERNEL);
 	if (newSec == NULL) {
@@ -243,8 +243,8 @@ int sys_magic_legilimens(pid_t pid) {
 		return -4;
 	}
 
-	if (copy_to_user(newSec->secret, target->my_secret, SECRET_MAXSIZE)) {
-		// fail, copy_to_user() failed...
+	if (strcpy(newSec->secret, target->my_secret) == NULL) {
+		// fail, strcpy() failed...
 		kfree(newSec);
 		return -5;
 	}
