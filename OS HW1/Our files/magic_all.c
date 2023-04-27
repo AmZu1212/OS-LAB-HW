@@ -280,7 +280,13 @@ int sys_magic_legilimens(pid_t pid) {
 int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 	struct task_struct *p = current;
-	
+
+	/*==== Errors & Checks ====*/
+	if (p->holding_wand == 0) {
+		// fail, process not holding a wand
+		return -2;
+	}
+
 	/*==== LOOP FOR TESTING LIST STRINGS ====*/
 	struct list_head* itr = p->secrets_ptr->next;
 	struct secrets_list* current_secret;
@@ -292,33 +298,28 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		itr = itr->next;
 
 	}
-	//===============================================================================
+	//========================================
 
-
-	/*==== Errors & Checks ====*/
-	if (secrets == NULL) {
-		// fail, secret is NULL
-		return -1;
-	}
-	
-	if (p->holding_wand == 0) {
-		// fail, process not holding a wand
-		return -2;
-	}
 
 	/*==== Getting secret_list length ====*/
 	int list_len = 0;
-	struct list_head *iterator;
+	struct list_head* iterator;
 	list_for_each(iterator, p->secrets_ptr) {
 		list_len++;
 	}
 
 	printk("CURRENT TASK LIST LENGTH IS [ %d ]\n", list_len);
 
-	if (size == 0) { 
+	if (size == 0) {
 		// return size of the secrets list
 		return list_len;//SUCCESS
 	}
+
+	if (secrets == NULL) {
+		// fail, secret is NULL
+		return -1;
+	}
+	
 	
 	/*==== Copying secrets to secret_list ====*/
 	struct list_head *ptr;
