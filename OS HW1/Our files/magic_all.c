@@ -202,6 +202,8 @@ int sys_magic_legilimens(pid_t pid) {
 	struct task_struct* attacker = current;
 	struct task_struct* target = find_task_by_pid(pid);
 
+	
+
 	/*==== Errors & Checks ====*/
 	if (target == attacker) {
 		// attacker is also target, so nothing happens.
@@ -218,16 +220,20 @@ int sys_magic_legilimens(pid_t pid) {
 		return -2; 
 	}
 
+	printk("target's my_secret: %s\n", target->my_secret);
+	printk("attacker's my_secret: %s\n", attacker->my_secret);
 
 	/*==== Check if attacker already has target's secret ====*/
 	struct list_head* iterator = attacker->secrets_ptr->next;
 	struct secrets_list* current_secret;
 	while (iterator != attacker->secrets_ptr) {
-
+		printk("entered while loop\n");
 		current_secret = list_entry(iterator, struct secrets_list, list);
-
-		if (!strcmp(current_secret->secret, attacker->my_secret)) {
+		
+		printk("comparing current's secret [ %s ] | with | target's secret [ %s ]\n", current_secret->secret, attacker->my_secret);
+		if (!strcmp(current_secret->secret, target->my_secret)) {
 			// fail, attacker already stole this target's secret
+			printk("fail, attacker already stole this target's secret\n");
 			return -3;
 		}
 		iterator = iterator->next;
@@ -248,7 +254,7 @@ int sys_magic_legilimens(pid_t pid) {
 		kfree(newSec);
 		return -5;
 	}
-
+	printk("newSec's secret is: [ %s ] \n", newSec-secret);
 	list_add_tail(&newSec->list, attacker->secrets_ptr);
 	return 0; // SUCCESS
 }
