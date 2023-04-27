@@ -284,7 +284,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 	/*==== LOOP FOR TESTING LIST STRINGS ====*/
 	struct list_head* itr = p->secrets_ptr->next;
 	struct secrets_list* current_secret;
-	while (itr != attacker->secrets_ptr) {
+	while (itr != p->secrets_ptr) {
 		printk("entered while loop\n");
 		current_secret = list_entry(itr, struct secrets_list, list);
 		printk("current's secret is [ %s ]\n", current_secret->secret);
