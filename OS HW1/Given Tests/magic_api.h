@@ -56,13 +56,13 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 
 		case -3:
 			// Length of secret is zero
-			printf("Error copying secret from user or secret is NULL\n");
+			printf("Length of secret is zero\n");
 			errno = EINVAL;
 			break;
 
 		case -4:
 			// Cannot allocate memory
-			printf("Error copying secret from user or secret is NULL\n");
+			printf("Cannot allocate memory\n");
 			errno = ENOMEM;
 			break;
 		}

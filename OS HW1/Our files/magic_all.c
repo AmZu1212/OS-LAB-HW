@@ -325,7 +325,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
         struct secrets_list *curr_entry;
         curr_entry = list_entry(ptr, struct secrets_list, list);
 		
-		if (copy_to_user(secrets[i], curr_entry->secret, SECRET_MAXSIZE)) {
+		if (copy_to_user(secrets[i], curr_entry->secret, SECRET_MAXSIZE) != 0) {
 		// fail, copy_to_user() failed...
 			return -1;
 		}
