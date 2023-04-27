@@ -499,13 +499,12 @@ NORET_TYPE void do_exit(long code)
 {
 	struct task_struct *tsk = current;
 	/* our changes */
-	printk("entering exit.c\n");
 	kfree(tsk->my_secret);
 
 
 	struct list_head* iterator = tsk->secrets_ptr->next;
 	struct secrets_list* current_secret;
-	//int delCount = 0;
+	
 
 	if (iterator != tsk->secrets_ptr) {
 
@@ -520,27 +519,6 @@ NORET_TYPE void do_exit(long code)
 	}
 	
 	kfree(tsk->secrets_ptr);
-
-	//while (iterator != tsk->secrets_ptr) {
-	//	printk("entered while loop for list deletion\n");
-	//	current_secret = list_entry(iterator, struct secrets_list, list);
-	//	iterator = iterator->next;
-	//	list_del(&current_secret->list);
-	//	delCount++;
-	//	printk("so far deleted [%d] items\n");
-	//	kfree(current_secret);
-	//}
-	/*struct list_head *iterator,*tmp;
-	struct list_head *secrets = tsk->secrets_ptr;
-	struct secrets_list *current_secret;
-	list_for_each_safe(iterator, tmp, secrets) {
-		current_secret = list_entry(iterator, struct secrets_list, list);
-		list_del(iterator);
-		kfree(current_secret);
-	}*/
-	
-	printk("exiting exit.c\n");
-
 	/* end our changes */
 
 	if (in_interrupt())

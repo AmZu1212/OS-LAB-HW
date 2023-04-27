@@ -1,6 +1,6 @@
 //magic_api.h, user warper functions
 #define SECRET_MAXSIZE 32 
-
+#include <errno.h>
 /*
 *	Attach a wand to the current process with the given power level and
 *	secret and set the process’s health level to 100. If secret is shorter
@@ -189,26 +189,31 @@ int magic_legilimens(pid_t pid)
 	if (res < 0) {
 		switch (res) {
 		case -1:
+			printf("The process PID doesnt exist\n");
 			// The process PID doesnt exist
 			errno = ESRCH;
 			break;
 
 		case -2:
+			printf("Either the sending process or pid doesn’t have a wand\n");
 			// Either the sending process or pid doesn’t have a wand
 			errno = EPERM;
 			break;
 
 		case -3:
+			printf("Secret for pid was already read\n");
 			// Secret for pid was already read
 			errno = EEXIST;
 			break;
 
 		case -4:
+			printf("Cannot allocate memory\n");
 			// Cannot allocate memory
 			errno = ENOMEM;
 			break;
 
 		case -5:
+			printf("Error writing to user buffer\n");
 			// Error writing to user buffer
 			errno = EFAULT;
 			break;
@@ -266,17 +271,20 @@ int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
 	if (res < 0) {
 		switch (res) {
 		case -1:
+			printf("secrets is NULL or error writing to user buffer\n");
 			// secrets is NULL or error writing to user buffer
 			errno = EFAULT;
 			break;
 
 		case -2:
+			printf("The current process doesn’t have a wand\n");
 			// The current process doesn’t have a wand
 			errno = EPERM;
 			break;
 
 
 		case -4:
+			printf("Cannot allocate memory\n");
 			// Cannot allocate memory
 			errno = ENOMEM;
 			break;

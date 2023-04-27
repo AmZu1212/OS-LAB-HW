@@ -717,7 +717,6 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	p->pdeath_signal = 0;
 
 	/* our changes */
-	printk("entering fork.c\n");
 
 	p->holding_wand = 0;
 	p->my_secret = NULL;
@@ -731,7 +730,6 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 
 	INIT_LIST_HEAD(new_head);
 	p->secrets_ptr = new_head;
-	printk("exiting fork.c\n");
 
 	/*	end our changes	*/
 
