@@ -107,7 +107,7 @@ int main() {
 					//GAME END PRINT
 					int j;
 					for (j = 0; j < NUM_SECRET; j++) {
-						//printf("secret number %d : %s \n",j,secrets[j]);
+						printf("secret number %d : %s \n",j,secrets[j]);
 					}
 
 

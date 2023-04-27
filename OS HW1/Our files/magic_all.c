@@ -322,7 +322,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 	
 	/*==== Copying secrets to secret_list ====*/
 	struct list_head *ptr;
-    ptr = p->secrets_ptr; // iterator for list secrets 
+    ptr = p->secrets_ptr->next; // iterator for list secrets 
     int i, stolen = 0, counter = list_len;
 
     for ( i = 0; i < size; i++) {
