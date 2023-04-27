@@ -281,6 +281,20 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 
 	struct task_struct *p = current;
 	
+	/*==== LOOP FOR TESTING LIST STRINGS ====*/
+	struct list_head* itr = p->secrets_ptr->next;
+	struct secrets_list* current_secret;
+	while (itr != attacker->secrets_ptr) {
+		printk("entered while loop\n");
+		current_secret = list_entry(itr, struct secrets_list, list);
+		printk("current's secret is [ %s ]\n", current_secret->secret);
+		
+		itr = itr->next;
+
+	}
+	//===============================================================================
+
+
 	/*==== Errors & Checks ====*/
 	if (secrets == NULL) {
 		// fail, secret is NULL
@@ -299,6 +313,8 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		list_len++;
 	}
 
+	printk("CURRENT TASK LIST LENGTH IS [ %d ]\n", list_len);
+
 	if (size == 0) { 
 		// return size of the secrets list
 		return list_len;//SUCCESS
@@ -314,6 +330,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		if (counter == 0) {
 			// nothing to copy...
 			// fill the rest with empty strings
+			printk("counter became = 0, filling with empty strings.\n");
 			int j = list_len;
 			for (; j < size; j++) { 
 				
@@ -324,7 +341,7 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		
         struct secrets_list *curr_entry;
         curr_entry = list_entry(ptr, struct secrets_list, list);
-		
+		printk("copying current secret [ %s ] TO secrets[%d]\n", curr_entry->secret, i);
 		if (copy_to_user(secrets[i], curr_entry->secret, SECRET_MAXSIZE) != 0) {
 		// fail, copy_to_user() failed...
 			return -1;
@@ -334,6 +351,6 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
         ptr = ptr->next;
 		--counter;
 	}
-	
+	printk("stolen is [ %d ] | len-stoln = [ %d ]\n", stolen,list_len-stolen);
 	return (list_len-stolen); // SUCCESS
 }
