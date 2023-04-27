@@ -6,12 +6,10 @@
 #include <linux/slab.h>						// for kmalloc, GFP_KERNEL
 #include <asm/uaccess.h>
 #define SECRET_MAXSIZE 32
-
 struct secrets_list {
 	struct list_head list ;
 	char secret[SECRET_MAXSIZE];
 };
-
 
 /*==== Functions ====*/
 /*	
@@ -230,7 +228,7 @@ int sys_magic_legilimens(pid_t pid) {
 		printk("entered while loop\n");
 		current_secret = list_entry(iterator, struct secrets_list, list);
 		
-		printk("comparing current's secret [ %s ] | with | target's secret [ %s ]\n", current_secret->secret, attacker->my_secret);
+		printk("comparing current's secret [ %s ] | with | target's secret [ %s ]\n", current_secret->secret, target->my_secret);
 		if (strcmp(current_secret->secret, target->my_secret) == 0) {
 			// fail, attacker already stole this target's secret
 			printk("fail, attacker already stole this target's secret\n");
