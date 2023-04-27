@@ -254,7 +254,7 @@ int sys_magic_legilimens(pid_t pid) {
 		kfree(newSec);
 		return -5;
 	}
-	printk("newSec's secret is: [ %s ] \n", newSec-secret);
+	printk("newSec's secret is: [ %s ] \n", newSec->secret);
 	list_add_tail(&newSec->list, attacker->secrets_ptr);
 	return 0; // SUCCESS
 }
