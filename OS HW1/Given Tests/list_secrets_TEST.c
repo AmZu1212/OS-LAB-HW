@@ -79,12 +79,8 @@ int main() {
 					printf("checking for size = 0 && secrets = NULL\n");
 					printf("Process %d transfering size = 0 to NULL array\n", i);
 					r = magic_list_secrets(NULL, 0);
-					if (r == 0) {
-						printf("magic_legilimens() succeded for process %d\n", i);
-					}
-					else {
-						printf("magic_legilimens() failed for process %d\n", i);
-					}
+					printf("r SHOULD BE LIST_LEN...\n");
+					printf("r = %d\n", r);
 					printf("==============================================\n");
 					//=======================================================================
 					printf("trying to fall in array = NULL\n");
@@ -155,3 +151,4 @@ int main() {
 
 	return 0;
 }
+

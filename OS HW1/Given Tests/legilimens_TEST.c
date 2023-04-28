@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "magic_api.h"
-#define NUM_CHILDREN 3
+#define NUM_CHILDREN 4
 #define NUM_SECRET 2
 
 int main() {
@@ -96,7 +96,7 @@ int main() {
 				printf("\n\n");
 				//=======================================================================
 				printf("TESTING FOR 'READING MYSELF'\n");
-				r = magic_legilimens(pids[3]);
+				r = magic_legilimens(getpid());
 				if (r == 0) {
 					printf("magic_legilimens() succeded [SUCCESS] for process %d\n", i);
 				}
@@ -146,4 +146,5 @@ int main() {
 
 	return 0;
 }
+
 

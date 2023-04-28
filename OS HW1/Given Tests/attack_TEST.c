@@ -70,7 +70,7 @@ int main() {
 				//=======================================================================
 				printf("TESTING: attack a normal player\n");
 				r = magic_attack(pids[1]);
-				if (r == -1) {
+				if (r >= 0) {
 					printf("succeeded [SUCCESS] r = %d\n", r);
 				}
 				else {
