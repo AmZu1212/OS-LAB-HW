@@ -218,20 +218,16 @@ int sys_magic_legilimens(pid_t pid) {
 		return -2; 
 	}
 
-	printk("target's my_secret: %s\n", target->my_secret);
-	printk("attacker's my_secret: %s\n", attacker->my_secret);
+	
 
 	/*==== Check if attacker already has target's secret ====*/
 	struct list_head* iterator = attacker->secrets_ptr->next;
 	struct secrets_list* current_secret;
 	while (iterator != attacker->secrets_ptr) {
-		printk("entered while loop\n");
 		current_secret = list_entry(iterator, struct secrets_list, list);
 		
-		printk("comparing current's secret [ %s ] | with | target's secret [ %s ]\n", current_secret->secret, target->my_secret);
 		if (strcmp(current_secret->secret, target->my_secret) == 0) {
 			// fail, attacker already stole this target's secret
-			printk("fail, attacker already stole this target's secret\n");
 			return -3;
 		}
 		iterator = iterator->next;
@@ -252,7 +248,6 @@ int sys_magic_legilimens(pid_t pid) {
 		kfree(newSec);
 		return -5;
 	}
-	printk("newSec's secret is: [ %s ] \n", newSec->secret);
 	list_add_tail(&newSec->list, attacker->secrets_ptr);
 	return 0; // SUCCESS
 }
@@ -308,7 +303,6 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		list_len++;
 	}
 
-	printk("CURRENT TASK LIST LENGTH IS [ %d ]\n", list_len);
 
 	if (size == 0) {
 		// return size of the secrets list
@@ -331,7 +325,6 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		if (counter == 0) {
 			// nothing to copy...
 			// fill the rest with empty strings
-			printk("counter became = 0, filling with empty strings.\n");
 			int j = list_len;
 			for (; j < size; j++) { 
 				
@@ -342,7 +335,6 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 		
         struct secrets_list *curr_entry;
         curr_entry = list_entry(ptr, struct secrets_list, list);
-		printk("copying current secret [ %s ] TO secrets[%d]\n", curr_entry->secret, i);
 		if (copy_to_user(secrets[i], curr_entry->secret, SECRET_MAXSIZE) != 0) {
 		// fail, copy_to_user() failed...
 			return -1;
@@ -352,6 +344,5 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
         ptr = ptr->next;
 		--counter;
 	}
-	printk("stolen is [ %d ] | len-stoln = [ %d ]\n", stolen,list_len-stolen);
 	return (list_len-stolen); // SUCCESS
 }

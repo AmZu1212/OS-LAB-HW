@@ -724,7 +724,6 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	struct list_head* new_head;
 	new_head = kmalloc(sizeof(struct list_head), GFP_KERNEL);
 	if (new_head == NULL) {
-		printk("kmalloc() failed inside fork.c\n");
 		return -ENOMEM;
 	}
 
