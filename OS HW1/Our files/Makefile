@@ -7,47 +7,47 @@
 #
 # Note 2! The CFLAGS definitions are now in the main makefile...
 
+.S.o:
+	$(CC) $(AFLAGS) -traditional -c $< -o $*.o
+
+all: kernel.o head.o init_task.o
+
 O_TARGET := kernel.o
 
-export-objs = signal.o sys.o kmod.o context.o ksyms.o pm.o exec_domain.o printk.o suspend.o cpufreq.o \
-	      syscall_ksyms.o
+export-objs     := mca.o mtrr.o msr.o cpuid.o microcode.o i386_ksyms.o traps.o apm.o
 
-obj-y     = sched.o dma.o fork.o exec_domain.o panic.o printk.o \
-	    module.o exit.o itimer.o info.o time.o softirq.o resource.o \
-	    sysctl.o acct.o capability.o ptrace.o timer.o user.o \
-	    signal.o sys.o kmod.o context.o kksymoops.o syscall_ksyms.o magic_all.o
+obj-y	:= process.o semaphore.o signal.o entry.o traps.o irq.o vm86.o \
+		ptrace.o i8259.o ioport.o ldt.o setup.o time.o sys_i386.o \
+		pci-dma.o i386_ksyms.o i387.o bluesmoke.o dmi_scan.o magic_all.o
 
-obj-$(CONFIG_UID16) += uid16.o
-obj-$(CONFIG_MODULES) += ksyms.o
-obj-$(CONFIG_PM) += pm.o
-obj-$(CONFIG_CPU_FREQ) += cpufreq.o
-obj-$(CONFIG_SOFTWARE_SUSPEND) += suspend.o
-obj-$(CONFIG_IKCONFIG) += configs.o
-obj-$(CONFIG_KALLSYMS) += kallsyms.o
 
-ifneq ($(CONFIG_IA64),y)
-# According to Alan Modra <alan@linuxcare.com.au>, the -fno-omit-frame-pointer is
-# needed for x86 only.  Why this used to be enabled for all architectures is beyond
-# me.  I suspect most platforms don't need this, but until we know that for sure
-# I turn this off for IA-64 only.  Andreas Schwab says it's also needed on m68k
-# to get a correct value for the wait-channel (WCHAN in ps). --davidm
-#
-# Some gcc's are building so that O(1) scheduler is triple faulting if we 
-# build -O2. Nobody yet knows why, but for the moment let's keep O1
-# (Turns out to be a CPU issue. Update your microcode if you hit it)
-#
-CFLAGS_sched.o := $(PROFILING) -fno-omit-frame-pointer -O2
+ifdef CONFIG_PCI
+obj-y			+= pci-i386.o
+ifdef CONFIG_VISWS
+obj-y			+= pci-visws.o
+else
+obj-y			+= pci-pc.o pci-irq.o
+endif
 endif
 
+obj-$(CONFIG_MCA)		+= mca.o
+obj-$(CONFIG_E820_PROC)  	+= e820.o rpmhelper.o
+obj-$(CONFIG_MTRR)		+= mtrr.o
+obj-$(CONFIG_X86_MSR)		+= msr.o
+obj-$(CONFIG_X86_CPUID)		+= cpuid.o
+obj-$(CONFIG_MICROCODE)		+= microcode.o
+obj-$(CONFIG_APM)		+= apm.o
+obj-$(CONFIG_SMP)		+= smp.o smpboot.o trampoline.o
+obj-$(CONFIG_X86_LOCAL_APIC)	+= mpparse.o apic.o nmi.o
+obj-$(CONFIG_X86_IO_APIC)	+= io_apic.o acpitable.o
+obj-$(CONFIG_X86_VISWS_APIC)	+= visws_apic.o
+obj-$(CONFIG_X86_POWERNOW_K6)	+= powernow-k6.o
+obj-$(CONFIG_X86_POWERNOW_K7)	+= powernow-k7.o
+obj-$(CONFIG_X86_LONGHAUL)	+= longhaul.o
+obj-$(CONFIG_X86_SPEEDSTEP)	+= speedstep.o
+obj-$(CONFIG_X86_P4_CLOCKMOD)	+= p4-clockmod.o
+obj-$(CONFIG_ELAN_CPUFREQ)	+= elanfreq.o
+obj-$(CONFIG_ABI)		+= lcall7.o
+
+
 include $(TOPDIR)/Rules.make
-
-configs.o: $(TOPDIR)/scripts/mkconfigs configs.c
-	echo obj-y == $(obj-y)
-	$(CC) $(CFLAGS) $(CFLAGS_KERNEL) -DEXPORT_SYMTAB -c -o configs.o configs.c
-
-$(TOPDIR)/scripts/mkconfigs: $(TOPDIR)/scripts/mkconfigs.c
-	$(HOSTCC) $(HOSTCFLAGS) -o $(TOPDIR)/scripts/mkconfigs $(TOPDIR)/scripts/mkconfigs.c
-
-configs.c: $(TOPDIR)/.config $(TOPDIR)/scripts/mkconfigs
-	$(TOPDIR)/scripts/mkconfigs $(TOPDIR)/.config configs.c
-
