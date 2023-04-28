@@ -22,19 +22,10 @@ int main() {
 			printf("Child process %d started (PID: %d)\n", i, getpid());
 			switch (i) {
 				case 0:// PROCESS 0
-					//r = magic_get_wand(10, "secret0");
-					//if (r == 0) {
-					//	printf("magic_get_wand() succeeded for process %d\n", i);
-					//}
-					//else {
-					//	printf("magic_get_wand() failed for process %d\n", i);
-					//}
 					printf("trying to run list from a process not playing\n");
 					printf("Process %d transfering to secrets but it cannot play\n", i);
 					r = magic_list_secrets(secrets, NUM_SECRET);
 					printf("return flag r = %d \n", r);
-
-
 
 					break;
 
@@ -47,13 +38,6 @@ int main() {
 						printf("magic_get_wand() failed for process %d\n", i);
 					}
 
-
-					//printf("child %d stealing from process %d \n", i, pids[0]);
-					//r = magic_legilimens(pids[0]);
-
-
-
-
 					break;
 
 				case 2:// PROCESS 2
@@ -65,17 +49,9 @@ int main() {
 						printf("magic_get_wand() failed for process %d\n", i);
 					}
 
-
-					//printf("child %d stealing from process %d \n", i, pids[0]);
-					//r = magic_legilimens(pids[0]);
-					//printf("return flag r = %d \n", r);
-
 					printf("child %d stealing from process %d \n", i, pids[1]);
 					r = magic_legilimens(pids[1]);
 					printf("return flag r = %d \n", r);
-
-
-
 
 					break;
 
@@ -88,11 +64,6 @@ int main() {
 						printf("magic_get_wand() failed for process %d\n", i);
 					}
 
-
-					//printf("child %d stealing from process %d \n", i, pids[0]);
-					//r = magic_legilimens(pids[0]);
-					//printf("return flag r = %d \n", r);
-
 					printf("child %d stealing from process %d \n", i, pids[1]);
 					r = magic_legilimens(pids[1]);
 					printf("return flag r = %d \n", r);
@@ -103,38 +74,47 @@ int main() {
 
 					//=======================================================================
 					printf("TESTING: magic_list_Secret()\n");
-
+					//=======================================================================
 					printf("==============================================\n");
 					printf("checking for size = 0 && secrets = NULL\n");
 					printf("Process %d transfering size = 0 to NULL array\n", i);
 					r = magic_list_secrets(NULL, 0);
-					printf("return flag r = %d \n", r);
+					if (r == 0) {
+						printf("magic_legilimens() succeded for process %d\n", i);
+					}
+					else {
+						printf("magic_legilimens() failed for process %d\n", i);
+					}
 					printf("==============================================\n");
-
+					//=======================================================================
 					printf("trying to fall in array = NULL\n");
 					printf("Process %d transfering to NULL array\n", i);
 					r = magic_list_secrets(NULL, NUM_SECRET);
-					printf("return flag r = %d \n", r);
+					if (r == -1) {
+						printf("magic_legilimens() failed [SUCCESS] for process %d\n", i);
+					}
+					else {
+						printf("magic_legilimens() succeded [FAIL] for process %d\n", i);
+					}
 					printf("==============================================\n");
-
+					//=======================================================================
 					printf("trying to give size 0\n");
 					printf("Process %d transfering to secrets[] but size = 0\n", i);
 					r = magic_list_secrets(secrets, 0);
 					printf("return flag r = %d \n", r);
 					printf("==============================================\n");
-
+					//=======================================================================
 					printf("trying to copy less than max\n");
 					printf("Process %d transfering to secrets[] but size < actual size\n", i);
 					r = magic_list_secrets(secrets, 1);
 					printf("return flag r = %d \n", r);
 					printf("==============================================\n");
-
+					//=======================================================================
 					printf("trying to copy more than max\n");
 					printf("Process %d transfering to sodot[] but size >> actual size\n", i);
 					r = magic_list_secrets(sodot, NUM_SECRET);
 					printf("return flag r = %d \n", r);
 					printf("==============================================\n");
-
 					//=======================================================================
 
 					//GAME END PRINT
@@ -153,11 +133,9 @@ int main() {
 					printf("==============================================\n");
 
 
-
 					break;
 			}
 			
-
 
 			printf("===============================================\n");
 			sleep(2);
@@ -166,18 +144,6 @@ int main() {
 		}
 	}
 
-	//THIS IS OLD MAGIC ATTACK TEST
-		//r = magic_legilimens(pids[0]);
-		//printf("r = %d(success)\n",r);
-		//int health = magic_attack(c);
-		//printf("target pid = %d\n",pids[0]);
-		//printf("health = %d\n",health);
-	//========================================
-	 
-	 
-	
-	// parent process [ DONT TOUCH THIS ]
-	// wait for all child processes to complete
 	for (i = 0; i < NUM_CHILDREN; i++) {
 
 		waitpid(pids[i], &status, 0);
