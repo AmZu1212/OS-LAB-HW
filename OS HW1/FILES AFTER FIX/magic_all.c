@@ -5,7 +5,7 @@
 #include "../../../include/linux/list.h"	// for list_t
 #include <linux/slab.h>						// for kmalloc, GFP_KERNEL
 #include <asm/uaccess.h>
-#include <errno.h>
+#include <linux/errno.h>
 #define SECRET_MAXSIZE 32
 struct secrets_list {
 	struct list_head list ;
@@ -29,7 +29,7 @@ int maxx(int a,int b ){
 
 /*	
 *	Attach a wand to the current process with the given power level and 
-*	secret and set the process’s health level to 100. If secret is shorter
+*	secret and set the processÂ’s health level to 100. If secret is shorter
 *	than SECRET_MAXSIZE it will be terminated by a NULL character.
 *	After this system call returns, the process can attack and be attacked 
 *	by other processes until its health reaches zero. 
@@ -82,7 +82,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	p->my_secret = kmalloc(sizeof(char) * (len), GFP_KERNEL);
 
 	if (p->my_secret == NULL) {
-		return -4; // fail, error in malloc
+		return -ENOMEM; // fail, error in malloc
 	}
 
 
@@ -93,7 +93,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 	/*==== Validating strcpy() ====*/
 	if (strcmp(p->my_secret, secret)) {
 		kfree(p->my_secret);
-		return -2; //fail, error in copy
+		return -EFAULT; //fail, error in copy
 	}
 	
 
@@ -107,8 +107,8 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 }
 
 /*
-*	Attack the given process. If successful, the target process’ health 
-*	level is decreased by the current process’s wand power. 
+*	Attack the given process. If successful, the target processÂ’ health 
+*	level is decreased by the current processÂ’s wand power. 
 *	Health level should be capped at zero and not become negative.
 *	A process cannot attack itself or a process that has stolen its secret
 *
@@ -117,7 +117,7 @@ int sys_magic_get_wand(int power, char secret[SECRET_MAXSIZE]){
 *		On success: New health of pid (int)
 *
 *	Error Cypher:
-*		ESRCH        [-1] | Process pid doesn’t exist
+*		ESRCH        [-1] | Process pid doesnÂ’t exist
 *		EPERM        [-2] | Either the sender or pid doesnt have a wand
 *		EHOSTDOWN    [-3] | Either the sender or target process health is 0
 *		ENOMEM       [-4] | Cannot allocate memory
@@ -190,8 +190,8 @@ int sys_magic_attack(pid_t pid) {
 *		On success: 0
 *
 *	Error Cypher:
-*		ESRCH  [-1] | Process pid doesn’t exist
-*		EPERM  [-2] | Either the sending process or pid doesn’t have a wand
+*		ESRCH  [-1] | Process pid doesnÂ’t exist
+*		EPERM  [-2] | Either the sending process or pid doesnÂ’t have a wand
 * 		EEXIST [-3] | Secret for pid was already read
 *		ENOMEM [-4] | Cannot allocate memory
 *		EFAULT [-5] | Error writing to user buffer
@@ -261,7 +261,7 @@ int sys_magic_legilimens(pid_t pid) {
 *	should be terminated with NULL if the secret length is shorter 
 *	than SECRET_MAXSIZE. If size is more than the total number of available
 *	secrets, secrets should be padded with empty entries (empty strings) 
-*	until entry size. If size=0, don’t touch secrets and return the total
+*	until entry size. If size=0, donÂ’t touch secrets and return the total
 *	number of secrets.
 *
 *	Return value:
@@ -270,7 +270,7 @@ int sys_magic_legilimens(pid_t pid) {
 *
 *	Error Cypher:
 *		EFAULT [-1] | secrets is NULL or error writing to user buffer
-*		EPERM  [-2] | The current process doesn’t have a wand
+*		EPERM  [-2] | The current process doesnÂ’t have a wand
 *		ENOMEM [-4] | Cannot allocate memory
 */
 int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
