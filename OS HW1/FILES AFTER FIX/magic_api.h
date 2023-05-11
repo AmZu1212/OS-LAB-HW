@@ -42,7 +42,7 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 
 	if (res < 0) {
 		errno = -res;
-		res =-1
+		res = -1;
 	}
 
 	return res; // 
@@ -86,7 +86,7 @@ int magic_attack(pid_t pid)
 
 	if (res < 0) {
 		errno = -res;
-		res = -1
+		res = -1;
 	}
 
 	return res; // 
@@ -127,7 +127,7 @@ int magic_legilimens(pid_t pid)
 
 	if (res < 0) {
 		errno = -res;
-		res = -1
+		res = -1;
 	}
 
 	return res; // 
@@ -176,7 +176,7 @@ int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
 
 	if (res < 0) {
 		errno = -res;
-		res = -1
+		res = -1;
 	}
 
 	return res; // FAIL
