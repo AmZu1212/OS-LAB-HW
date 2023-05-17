@@ -6,6 +6,7 @@
 #include <linux/slab.h>						// for kmalloc, GFP_KERNEL
 #include <asm/uaccess.h>
 #include <linux/errno.h>
+
 #define SECRET_MAXSIZE 32
 struct secrets_list {
 	struct list_head list ;
@@ -363,15 +364,35 @@ int sys_magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size) {
 */
 int sys_magic_clock(unsigned int seconds) 
 {
+	printk("Entered magic_clock with %d seconds\n", seconds);
 	struct task_struct* p = current;
 	if (p->holding_wand == 0) {
 		// fail, The process isn't holding a wand.
+		printk("process not holding wand...\n");
 		return -EPERM;
 	}
 
 
 
+	unsigned int newjiffies = seconds * HZ;
+	printk("new calculated jiffies is: %d\n", newjiffies);
 
+	// Set the scheduling policy to FIFO and priority to 0 (realtime)
+	int err = sched_setscheduler(p, SCHED_FIFO, &(struct sched_param){.sched_priority = 0 });
+	if (err != 0) {
+		printk("UPGRADE priority failed...\n");
+		return -ENOMEM; // MAYBE DIFFERENT RETURN VALUE?
+	}
 
+	printk("new priority = 0 is set\n");
+
+	p->magic_time = seconds;
+	p->time_slice = newjiffies; // check later for needed include
+
+	printk("BEFORE magic_clock schedule call\n");
+	schedule();
+	printk("AFTER magic_clock schedule call\n");
+
+	return 0;
 
 }

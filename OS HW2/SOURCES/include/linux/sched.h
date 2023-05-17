@@ -466,6 +466,9 @@ struct task_struct {
 	char* my_secret;
 	//must be a pointer for a weird reason?
 	struct list_head* secrets_ptr;
+	//HW2 additions
+	unsigned int magic_time; // in jiffies
+	int called_magic_clock;
 	/* our changes end*/
 };
 

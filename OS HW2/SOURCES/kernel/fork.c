@@ -720,7 +720,8 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 
 	p->holding_wand = 0;
 	p->my_secret = NULL;
-
+	p->magic_time = 0;
+	p->called_magic_clock = 0;
 	struct list_head* new_head;
 	new_head = kmalloc(sizeof(struct list_head), GFP_KERNEL);
 	if (new_head == NULL) {

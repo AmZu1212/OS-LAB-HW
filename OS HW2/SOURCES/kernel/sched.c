@@ -798,6 +798,8 @@ void scheduling_functions_start_here(void) { }
  * 'schedule()' is the main scheduler function.
  */
 asmlinkage void schedule(void)
+
+
 {
 	task_t *prev, *next;
 	runqueue_t *rq;
@@ -808,6 +810,43 @@ asmlinkage void schedule(void)
 	if (unlikely(in_interrupt()))
 		BUG();
 
+
+
+	//============= our changes ==================
+	prev = current;
+
+	printk("entered schedule()\n");
+
+	if (prev->called_magic_clock == 1) {
+
+		printk("called_magic_clock was == 1, entering if() to reset to default\n");
+		// Set the scheduling policy to FIFO and priority to DEFAULT (120) (regular process)
+		int err = sched_setscheduler(prev, SCHED_FIFO, &(struct sched_param){.sched_priority = 120 });
+		if (err != 0) {
+			printk("DOWNGRADE priority failed...\n");
+			return -ENOMEM; // MAYBE DIFFERENT RETURN VALUE?
+		}
+
+		prev->called_magic_clock = 0;
+		prev->magic_time = 0;
+		printk("reset magic_clock succesful\n");
+		return;
+	}
+
+	if (prev->magic_time != 0) {
+
+		printk("entered magic_time if(), flag++, next is prev\n");
+		//Let the process run next, timeslice got updated in magic_all.c
+		prev->called_magic_clock = 1;
+		next = prev;
+
+		printk("next = prev done successfully\n");
+		return;
+	}
+	//============= end our changes ==================
+
+
+
 need_resched:
 	prev = current;
 	rq = this_rq();
@@ -816,6 +855,9 @@ need_resched:
 	prepare_arch_schedule(prev);
 	prev->sleep_timestamp = jiffies;
 	spin_lock_irq(&rq->lock);
+
+
+
 
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
