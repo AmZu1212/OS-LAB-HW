@@ -900,7 +900,7 @@ pick_next_task:
 		// Allocate special timeslice to the special process
 		// and update flag.
 		next->called_magic_clock = 1;
-		next->time_slice = p->magic_time; 
+		next->time_slice = next->magic_time; 
 		printk("updated timeslice & flag\n");
 		// Replace special_timeslice_value with the desired value for the special timeslice
 	} 
