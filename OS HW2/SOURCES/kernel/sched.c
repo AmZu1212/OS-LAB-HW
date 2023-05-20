@@ -798,8 +798,6 @@ void scheduling_functions_start_here(void) { }
  * 'schedule()' is the main scheduler function.
  */
 asmlinkage void schedule(void)
-
-
 {
 	task_t *prev, *next;
 	runqueue_t *rq;
@@ -813,10 +811,10 @@ asmlinkage void schedule(void)
 
 
 	//============= our changes ==================
-	prev = current;
+	//prev = current;
 
 	printk("entered schedule()\n");
-
+	/*
 	if (prev->called_magic_clock == 1) {
 
 		printk("called_magic_clock was == 1, entering if() to reset to default\n");
@@ -831,18 +829,7 @@ asmlinkage void schedule(void)
 		prev->magic_time = 0;
 		printk("reset magic_clock succesful\n");
 		return;
-	}
-
-	if (prev->magic_time != 0) {
-
-		printk("entered magic_time if(), flag++, next is prev\n");
-		//Let the process run next, timeslice got updated in magic_all.c
-		prev->called_magic_clock = 1;
-		next = prev;
-
-		printk("next = prev done successfully\n");
-		return;
-	}
+	}*/
 	//============= end our changes ==================
 
 
@@ -861,6 +848,7 @@ need_resched:
 
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
+
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;
@@ -875,6 +863,12 @@ pick_next_task:
 #endif
 	if (unlikely(!rq->nr_running)) {
 #if CONFIG_SMP
+		
+		if (prev->called_magic_clock == 1) {
+			printk("special task is trying to sleep, doing prev = next\n");
+			next = prev;
+			goto switch_tasks;
+		}
 		load_balance(rq, 1);
 		if (rq->nr_running)
 			goto pick_next_task;
@@ -899,6 +893,18 @@ pick_next_task:
 	queue = array->queue + idx;
 	next = list_entry(queue->next, task_t, run_list);
 
+	// Check if the next task is the special process with magic_time
+	printk("checking is it is a special process\n");
+	if (next->magic_time != 0 && next->called_magic_clock == 0) {
+		printk("magic process found, magic_time = %d, flag = %d \n",next->magic_time,next->called_magic_clock);
+		// Allocate special timeslice to the special process
+		// and update flag.
+		next->called_magic_clock = 1;
+		next->time_slice = p->magic_time; 
+		printk("updated timeslice & flag\n");
+		// Replace special_timeslice_value with the desired value for the special timeslice
+	} 
+
 switch_tasks:
 	prefetch(next);
 	clear_tsk_need_resched(prev);
@@ -917,6 +923,24 @@ switch_tasks:
 	finish_arch_schedule(prev);
 
 	reacquire_kernel_lock(current);
+
+	// Reset magic_time and called_magic_clock for the special process
+	// and decrement for ticks
+	printk("checking if process magic_time is not 0\n");
+	if (prev->magic_time != 0) {
+		prev->magic_time--;
+		printk("decrementing magic_time, time = %d \n",prev->magic_time);
+		if(prev->magic_time == 0) {
+			printk("magic_time is 0, reseting to default\n");
+			prev->magic_time = 0;
+			prev->called_magic_clock = 0;
+			prev->prio = 120;
+			printk("magic time: %d  \n",prev->magic_time);
+			printk("flag: %d  \n",prev->called_magic_clock);
+			printk("priority: %d  \n",prev->prio);
+		}
+	}
+
 	if (need_resched())
 		goto need_resched;
 }

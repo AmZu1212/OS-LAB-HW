@@ -3,7 +3,7 @@
 #include <errno.h>
 /*
 *	Attach a wand to the current process with the given power level and
-*	secret and set the process’s health level to 100. If secret is shorter
+*	secret and set the processï¿½s health level to 100. If secret is shorter
 *	than SECRET_MAXSIZE it will be terminated by a NULL character.
 *	After this system call returns, the process can attack and be attacked
 *	by other processes until its health reaches zero.
@@ -49,8 +49,8 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 }
 
 /*
-*	Attack the given process. If successful, the target process’ health
-*	level is decreased by the current process’s wand power.
+*	Attack the given process. If successful, the target processï¿½ health
+*	level is decreased by the current processï¿½s wand power.
 *	Health level should be capped at zero and not become negative.
 *	A process cannot attack itself or a process that has stolen its secret
 *
@@ -59,7 +59,7 @@ int magic_get_wand(int power, char secret[SECRET_MAXSIZE])
 *		On success: New health of pid (int)
 *
 *	Error Cypher:
-*		ESRCH        | Process pid doesn’t exist
+*		ESRCH        | Process pid doesnï¿½t exist
 *		EPERM        | Either the sender or pid doesnt have a wand
 *		EHOSTDOWN    | Either the sender or target process health is 0
 *		ENOMEM       | Cannot allocate memory
@@ -101,8 +101,8 @@ int magic_attack(pid_t pid)
 *		On success: 0
 *
 *	Error Cypher:
-*		ESRCH  | Process pid doesn’t exist
-*		EPERM  | Either the sending process or pid doesn’t have a wand
+*		ESRCH  | Process pid doesnï¿½t exist
+*		EPERM  | Either the sending process or pid doesnï¿½t have a wand
 * 		EEXIST | Secret for pid was already read
 *		ENOMEM | Cannot allocate memory
 *		EFAULT | Error writing to user buffer
@@ -141,7 +141,7 @@ int magic_legilimens(pid_t pid)
 *	should be terminated with NULL if the secret length is shorter
 *	than SECRET_MAXSIZE. If size is more than the total number of available
 *	secrets, secrets should be padded with empty entries (empty strings)
-*	until entry size. If size=0, don’t touch secrets and return the total
+*	until entry size. If size=0, donï¿½t touch secrets and return the total
 *	number of secrets.
 *
 *	Return value:
@@ -150,7 +150,7 @@ int magic_legilimens(pid_t pid)
 *
 *	Error Cypher:
 *		EFAULT | secrets is NULL or error writing to user buffer
-*		EPERM  | The current process doesn’t have a wand
+*		EPERM  | The current process doesnï¿½t have a wand
 *		ENOMEM | Cannot allocate memory
 */
 int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
@@ -191,7 +191,7 @@ int magic_list_secrets(char secrets[][SECRET_MAXSIZE], size_t size)
 *		On success: 0
 *
 *	Error Cypher:
-*		EPERM  | The calling process doesn’t have a wand.
+*		EPERM  | The calling process doesn't have a wand.
 *		ENOMEM | Error allocating memory.
 */
 int magic_clock(unsigned int seconds)

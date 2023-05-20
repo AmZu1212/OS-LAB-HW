@@ -378,16 +378,18 @@ int sys_magic_clock(unsigned int seconds)
 	printk("new calculated jiffies is: %d\n", newjiffies);
 
 	// Set the scheduling policy to FIFO and priority to 0 (realtime)
+	/*
 	int err = sched_setscheduler(p, SCHED_FIFO, &(struct sched_param){.sched_priority = 0 });
 	if (err != 0) {
 		printk("UPGRADE priority failed...\n");
 		return -ENOMEM; // MAYBE DIFFERENT RETURN VALUE?
 	}
+	*/
 
+	p->prio = 0;
 	printk("new priority = 0 is set\n");
-
-	p->magic_time = seconds;
-	p->time_slice = newjiffies; // check later for needed include
+	p->magic_time = newjiffies;
+	// check later for needed include
 
 	printk("BEFORE magic_clock schedule call\n");
 	schedule();
