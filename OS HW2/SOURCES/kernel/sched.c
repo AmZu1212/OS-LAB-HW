@@ -864,7 +864,7 @@ pick_next_task:
 	if (unlikely(!rq->nr_running)) {
 #if CONFIG_SMP
 		
-		if (prev->called_magic_clock == 1) {
+		if (unlikely(prev->called_magic_clock == 1)) {
 			printk("special task is trying to sleep, doing prev = next\n");
 			next = prev;
 			goto switch_tasks;
@@ -895,7 +895,7 @@ pick_next_task:
 
 	// Check if the next task is the special process with magic_time
 	printk("checking is it is a special process\n");
-	if (next->magic_time != 0 && next->called_magic_clock == 0) {
+	if (unlikely(next->magic_time != 0 && next->called_magic_clock == 0)) {
 		printk("magic process found, magic_time = %d, flag = %d \n",next->magic_time,next->called_magic_clock);
 		// Allocate special timeslice to the special process
 		// and update flag.
@@ -927,7 +927,7 @@ switch_tasks:
 	// Reset magic_time and called_magic_clock for the special process
 	// and decrement for ticks
 	printk("checking if process magic_time is not 0\n");
-	if (prev->magic_time != 0) {
+	if (unlikely(prev->magic_time != 0)) {
 		prev->magic_time--;
 		printk("decrementing magic_time, time = %d \n",prev->magic_time);
 		if(prev->magic_time == 0) {
