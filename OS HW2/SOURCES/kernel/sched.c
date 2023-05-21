@@ -720,39 +720,101 @@ static inline void idle_tick(void)
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
+  
+//	======================= NEW DECLARATIONS ====================== //
 
-// timeslice,  
+// declare global timer (-1 for non active....)
+int magicTimer = -1;
+// ASSUME INTEGER TIMER FOR NOW, MARK TIMER LINES AND LOGIC FOR SWITCHING LATER.
+// THE TIMER IS RESPONSIBLE FOR KEEPING THE MAGIC PROCESS IN CHECK WHILE
+// RUNNING AND ALSO IDLING
+// NOTE FOR LATER: i think we need to define a jiffie timer, make it so initial 
+// value is magic_time, and every tick check if its done, then revoke access.
 
-// declare global timer
+
+//meant to differentiate between a "magic" idle and a regular idle.
+int magicIdle = 0;
+
+
+// a task pointer to return to after idling the cpu assumign there is enough timer left.
+// also an after thought, we should keep timer updated with timeslice, with that said
+// time slice is not realtime...?
+task_t* magicProcess = NULL;
+
+//	======================= END OF NEW DECLARATIONS ====================== //
+
+
 void scheduler_tick(int user_tick, int system)
 {
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
-	// if p magic time > 0 and called_magic = 0 -> save call_time, do p->prio = MAX_PRIO
-	// after giving super priority, do called_magic = 1.
-	// check if timer_now - call_time >> magic time
-	// if true reset to regular process
+
+
+	// ================== OUR CHANGES ==================
+
+	// ================ TIMER TICKER
+	// COUNT TIMER TICK, MAYBE REMOVE LATER IF NECESSARY
+	if(magicTimer != 0) {
+		magicTimer--;
+	}
+
+	// ================ MAGIC INITIALIZATION
+	// MAYBE CONSIDER SAVING CALL TIME, DEPENDS ON 
+	// TIMER IMPLEMENTAION DECISION.
+	if(p->magic_time > 0 && p->called_magic_clock == 0) {
+
+		p->prio = 50; // mid-level realtime priority
+
+		// after giving super priority, do called_magic = 1.
+		p->called_magic_clock = 1;
+		
+		// save new process
+		magicProcess = p;
+
+		// update to special time slice
+		p->time_slice = p->magic_time;
+
+		// the rest will be taken care of automatically (the lazy approach)
+	}
+
+
+	// =============== START OF MAGIC RESET SEGMENT
+	// CHECK THE REVOKE/KICK CONDITION FOR TIMER END
+	if(magicTimer == 0) {// OR OTHER, BETTER , TIMER RELATED KICK CONDITION
+
+		magicProcess->prio = effective_prio(p); // this gives default user priority
+		magicProcess->magic_time = 0;
+		magicProcess->time_slice = 0;
+		magicProcess-> called_magic_clock = 0;
+		magicIdle = 0;
+		magicProcess = NULL;
+	}
+	// =============== END OF RESET SEGMENT
+
+	// ================== END OF OUR CHANGES ==================
+
+
+	// if we enter this, current task is CPU_IDLE
+	// We need to decrement the time_slice and timer for normal operation.
+	// kater decide which one is better to use
 	if (p == rq->idle) {
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
 			kstat.per_cpu_system[cpu] += system;
 
-		// check if idle from magic = 1
-		// do magic_process->timeslice--
-		// is time slice = 0, also reset like below
-		// check timer
-		// if timer >> magic_time 
-		// magic time is over, reset priorities to magic_process_pointer
-		// continue normal protocol
-		if(p->magic_time > 0) {
-			// process has requested exclusive cpu access. 
-			// maybe allocate time slice here? not sure
+		// MINOR OUR CHANGES
+		// decrementing magic task time slice
+		if(magicProcess != NULL && magicProcess->time_slice != 0){
+			magicProcess->time_slice--;
 		}
+		// END OF MINOR OUR CHANGES
+
 #if CONFIG_SMP
-		idle_tick();
+		idle_tick(); // IDLE CPU TICK
 #endif
 		return;
 	}
+
 	if (TASK_NICE(p) > 0)
 		kstat.per_cpu_nice[cpu] += user_tick;
 	else
@@ -828,10 +890,6 @@ asmlinkage void schedule(void)
 
 	if (unlikely(in_interrupt()))
 		BUG();
-	//===========================================================
-	printk("entered schedule()\n");
-	
-
 
 need_resched:
 	prev = current;
@@ -847,16 +905,30 @@ need_resched:
 
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
+		//*** OUR CHANGES
 		// if we are here we are sleeping...
 		// check if i am a magic process
-		// if true :
-		// save pointer to magic task
-		// save current time
-		// set next to rq->idle , IDLE CPU 
-		// TIMER ON
-		// go to switch tasks.
-		// do flag: idle from magic = 1.
-		
+		if(current->magic_time > 0) {
+			// if true :
+			// save pointer to magic task
+			magicProcess = current;
+			// set next to rq->idle , IDLE CPU 
+			next = rq->idle;
+			
+			// TIMER ON
+			// save current time
+			timer = current->magic_time;
+			
+			
+			// do flag: idle from magic = 1.	
+			magicIdle = 1;
+
+			// go to switch tasks.
+			goto switch_tasks;
+			
+		}
+		// else, this is a normal task sleep cycle...
+		//*** END OF OUR CHANGES
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;
@@ -871,14 +943,28 @@ pick_next_task:
 #endif
 	if (unlikely(!rq->nr_running)) {
 #if CONFIG_SMP
-		// if idle from magic = 1
-		//
-		// check if magic process is awake,
-		// 		do next = magic process.
-		//		dont forget, idle from magic = 0
-		//		ALSO KILL TIMER.
-		// else, do next = idle
-		// go to switch tasks
+		//*** OUR CHANGES
+		//if we are idling, check if it is magic related
+		if(magicIdle == 1) { 
+			// if true:
+			// check if magic process is awake
+			if(magicProcess->state == TASK_RUNNING) {
+				// do next = magic process.
+				next = magicProcess;
+				// dont forget, idle from magic = 0
+				magicIdle = 0;
+
+				// ALSO KILL TIMER.
+			 	magicTimer = -1;
+			} else { // else, do next = idle
+				//is prev enough? or should we next = rq->idle?
+				next = rq->idle;
+				// go to switch tasks
+				goto switch_tasks;
+			}
+		}
+		//*** END OF OUR CHANGES
+		
 		load_balance(rq, 1);
 		if (rq->nr_running)
 			goto pick_next_task;

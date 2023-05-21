@@ -386,14 +386,14 @@ int sys_magic_clock(unsigned int seconds)
 	}
 	*/
 
-	p->prio = 0;
-	printk("new priority = 0 is set\n");
+	//p->prio = 0;
+	//printk("new priority = 0 is set\n");
 	p->magic_time = newjiffies;
 	// check later for needed include
 
-	printk("BEFORE magic_clock schedule call\n");
-	schedule();
-	printk("AFTER magic_clock schedule call\n");
+	//printk("BEFORE magic_clock schedule call\n");
+	//schedule();
+	//printk("AFTER magic_clock schedule call\n");
 
 	return 0;
 
