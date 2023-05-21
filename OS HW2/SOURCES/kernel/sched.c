@@ -32,6 +32,8 @@
  * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
  * and back.
  */
+
+//MAX_RT_PRIO == 100
 #define NICE_TO_PRIO(nice)	(MAX_RT_PRIO + (nice) + 20)
 #define PRIO_TO_NICE(prio)	((prio) - MAX_RT_PRIO - 20)
 #define TASK_NICE(p)		PRIO_TO_NICE((p)->static_prio)
@@ -718,15 +720,34 @@ static inline void idle_tick(void)
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
+
+// timeslice,  
+
+// declare global timer
 void scheduler_tick(int user_tick, int system)
 {
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
-
+	// if p magic time > 0 and called_magic = 0 -> save call_time, do p->prio = MAX_PRIO
+	// after giving super priority, do called_magic = 1.
+	// check if timer_now - call_time >> magic time
+	// if true reset to regular process
 	if (p == rq->idle) {
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
 			kstat.per_cpu_system[cpu] += system;
+
+		// check if idle from magic = 1
+		// do magic_process->timeslice--
+		// is time slice = 0, also reset like below
+		// check timer
+		// if timer >> magic_time 
+		// magic time is over, reset priorities to magic_process_pointer
+		// continue normal protocol
+		if(p->magic_time > 0) {
+			// process has requested exclusive cpu access. 
+			// maybe allocate time slice here? not sure
+		}
 #if CONFIG_SMP
 		idle_tick();
 #endif
@@ -807,31 +828,9 @@ asmlinkage void schedule(void)
 
 	if (unlikely(in_interrupt()))
 		BUG();
-
-
-
-	//============= our changes ==================
-	//prev = current;
-
+	//===========================================================
 	printk("entered schedule()\n");
-	/*
-	if (prev->called_magic_clock == 1) {
-
-		printk("called_magic_clock was == 1, entering if() to reset to default\n");
-		// Set the scheduling policy to FIFO and priority to DEFAULT (120) (regular process)
-		int err = sched_setscheduler(prev, SCHED_FIFO, &(struct sched_param){.sched_priority = 120 });
-		if (err != 0) {
-			printk("DOWNGRADE priority failed...\n");
-			return -ENOMEM; // MAYBE DIFFERENT RETURN VALUE?
-		}
-
-		prev->called_magic_clock = 0;
-		prev->magic_time = 0;
-		printk("reset magic_clock succesful\n");
-		return;
-	}*/
-	//============= end our changes ==================
-
+	
 
 
 need_resched:
@@ -848,7 +847,16 @@ need_resched:
 
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
-
+		// if we are here we are sleeping...
+		// check if i am a magic process
+		// if true :
+		// save pointer to magic task
+		// save current time
+		// set next to rq->idle , IDLE CPU 
+		// TIMER ON
+		// go to switch tasks.
+		// do flag: idle from magic = 1.
+		
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;
@@ -863,12 +871,14 @@ pick_next_task:
 #endif
 	if (unlikely(!rq->nr_running)) {
 #if CONFIG_SMP
-		
-		if (unlikely(prev->called_magic_clock == 1)) {
-			printk("special task is trying to sleep, doing prev = next\n");
-			next = prev;
-			goto switch_tasks;
-		}
+		// if idle from magic = 1
+		//
+		// check if magic process is awake,
+		// 		do next = magic process.
+		//		dont forget, idle from magic = 0
+		//		ALSO KILL TIMER.
+		// else, do next = idle
+		// go to switch tasks
 		load_balance(rq, 1);
 		if (rq->nr_running)
 			goto pick_next_task;
@@ -893,18 +903,6 @@ pick_next_task:
 	queue = array->queue + idx;
 	next = list_entry(queue->next, task_t, run_list);
 
-	// Check if the next task is the special process with magic_time
-	printk("checking is it is a special process\n");
-	if (unlikely(next->magic_time != 0 && next->called_magic_clock == 0)) {
-		printk("magic process found, magic_time = %d, flag = %d \n",next->magic_time,next->called_magic_clock);
-		// Allocate special timeslice to the special process
-		// and update flag.
-		next->called_magic_clock = 1;
-		next->time_slice = next->magic_time; 
-		printk("updated timeslice & flag\n");
-		// Replace special_timeslice_value with the desired value for the special timeslice
-	} 
-
 switch_tasks:
 	prefetch(next);
 	clear_tsk_need_resched(prev);
@@ -923,23 +921,6 @@ switch_tasks:
 	finish_arch_schedule(prev);
 
 	reacquire_kernel_lock(current);
-
-	// Reset magic_time and called_magic_clock for the special process
-	// and decrement for ticks
-	printk("checking if process magic_time is not 0\n");
-	if (unlikely(prev->magic_time != 0)) {
-		prev->magic_time--;
-		printk("decrementing magic_time, time = %d \n",prev->magic_time);
-		if(prev->magic_time == 0) {
-			printk("magic_time is 0, reseting to default\n");
-			prev->magic_time = 0;
-			prev->called_magic_clock = 0;
-			prev->prio = 120;
-			printk("magic time: %d  \n",prev->magic_time);
-			printk("flag: %d  \n",prev->called_magic_clock);
-			printk("priority: %d  \n",prev->prio);
-		}
-	}
 
 	if (need_resched())
 		goto need_resched;
@@ -1061,7 +1042,7 @@ void interruptible_sleep_on(wait_queue_head_t *q)
 long interruptible_sleep_on_timeout(wait_queue_head_t *q, long timeout)
 {
 	SLEEP_ON_VAR
-
+ 
 	current->state = TASK_INTERRUPTIBLE;
 
 	SLEEP_ON_HEAD
