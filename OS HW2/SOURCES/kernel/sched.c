@@ -755,11 +755,13 @@ void scheduler_tick(int user_tick, int system)
 	// ================ TIMER TICKER
 	// COUNT TIMER TICK, MAYBE REMOVE LATER IF NECESSARY
 	int delta = jiffies - magicTimer;
+	printk("calc delta is %d\n", delta);
 	if (magicProcess != NULL) {
+		printk("1-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
 		printk("magicProcess Exists\n");
 		if (magicProcess->magic_time > 0 && delta > magicProcess->magic_time) {
 			//  START MAGIC RESET
-			printk("magic time is %d, delta is %d", magicProcess->magic_time, delta);
+			printk("2-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
 			printk("magic time is over, reseting priority...\n");
 			magicProcess->prio = 120;//effective_prio(p); // this gives default user priority
 			magicProcess->magic_time = 0;
