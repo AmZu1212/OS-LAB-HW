@@ -756,8 +756,11 @@ void scheduler_tick(int user_tick, int system)
 	// COUNT TIMER TICK, MAYBE REMOVE LATER IF NECESSARY
 	int delta = jiffies - magicTimer;
 	if (magicProcess != NULL) {
+		printk("magicProcess Exists\n");
 		if (magicProcess->magic_time > 0 && delta > magicProcess->magic_time) {
 			//  START MAGIC RESET
+			printk("magic time is %d, delta is %d", magicProcess->magic_time, delta);
+			printk("magic time is over, reseting priority...\n");
 			magicProcess->prio = 120;//effective_prio(p); // this gives default user priority
 			magicProcess->magic_time = 0;
 			magicProcess->time_slice = 0;
@@ -770,6 +773,7 @@ void scheduler_tick(int user_tick, int system)
 	
 	if(p->magic_time > 0 && p->called_magic_clock == 0) {
 		//  MAGIC INITIALIZATION
+		printk("detected fresh magicProcess, initializing...\n");
 		p->prio = 50; // mid-level realtime priority
 
 		// after giving super priority, do called_magic = 1.
@@ -794,6 +798,7 @@ void scheduler_tick(int user_tick, int system)
 		// MINOR OUR CHANGES
 		// decrementing magic task time slice
 		if(magicProcess != NULL) {
+			printk("checking magic timeslice, timeslice = %d\n",magicProcess->time_slice);
 			if (magicProcess->time_slice != 0) {
 				magicProcess->time_slice--;
 			}
@@ -900,12 +905,13 @@ need_resched:
 		// if we are here we are sleeping...
 		// check if i am a magic process
 		if(current->magic_time > 0) {
+			printk("detected suspended magic process\n");
 			// if true :
 			// save pointer to magic task
 			magicProcess = current;
 			// set next to rq->idle , IDLE CPU 
 			next = rq->idle;
-			
+			printk("trying to next = idle\n");
 			// TIMER ON
 			// save current time
 			//magicTimer = current->magic_time;
@@ -936,9 +942,11 @@ pick_next_task:
 	//*** OUR CHANGES
 		//if we are idling, check if it is magic related
 	if (prev == rq->idle && magicIdle == 1) {
+		printk("detected prev is idle and magic	Idle is ON\n");
 		// if true:
 		// check if magic process is awake
 		if (magicProcess->state == TASK_RUNNING) {
+			printk("detected awake magic, next = magicProcess\n");
 			// do next = magic process.
 			next = magicProcess;
 			// dont forget, idle from magic = 0
@@ -950,6 +958,7 @@ pick_next_task:
 		else { // else, do next = idle
 			//is prev enough? or should we next = rq->idle?
 			next = rq->idle;
+			printk("magic still sleeping, next = idle\n");
 		}
 
 		goto switch_tasks;
