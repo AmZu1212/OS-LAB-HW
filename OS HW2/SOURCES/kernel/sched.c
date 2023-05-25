@@ -734,6 +734,7 @@ int magicTimer = -1;
 
 //meant to differentiate between a "magic" idle and a regular idle.
 int magicIdle = 0;
+int magicDead = 0;
 
 
 // a task pointer to return to after idling the cpu assumign there is enough timer left.
@@ -749,19 +750,32 @@ void scheduler_tick(int user_tick, int system)
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
+	int cur_jiff = (int)jiffies ;
 
+	
+	
 
 	// ================== OUR CHANGES ==================
 	// ================ TIMER TICKER
 	// COUNT TIMER TICK, MAYBE REMOVE LATER IF NECESSARY
-	int delta = jiffies - magicTimer;
-	printk("calc delta is %d\n", delta);
+	
+	int delta = cur_jiff - magicTimer;
+	
+	
 	if (magicProcess != NULL) {
-		printk("1-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
+	    
+		if(magicProcess->state == TASK_ZOMBIE){
+			printk("magic child died before timer\n");
+			magicDead = 1;
+		}
+		
+		int my_pid = (int)current->pid ;
+		printk("curr task_pid = :%d  ",my_pid);
+		printk("cur_jiff is  %d .. magicTimer is  %d .. delta is  %d \n" ,cur_jiff,magicTimer,delta);
 		printk("magicProcess Exists\n");
-		if (magicProcess->magic_time > 0 && delta > magicProcess->magic_time) {
+		if ((magicProcess->magic_time > 0 && delta > magicProcess->magic_time) || magicDead == 1) {
 			//  START MAGIC RESET
-			printk("2-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
+			//printk("2-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
 			printk("magic time is over, reseting priority...\n");
 			magicProcess->prio = 120;//effective_prio(p); // this gives default user priority
 			magicProcess->magic_time = 0;
@@ -770,6 +784,7 @@ void scheduler_tick(int user_tick, int system)
 			magicIdle = 0;
 			magicProcess = NULL;
 			magicTimer = -10;
+			magicDead = 0;
 		}
 	}
 	
@@ -780,7 +795,8 @@ void scheduler_tick(int user_tick, int system)
 
 		// after giving super priority, do called_magic = 1.
 		p->called_magic_clock = 1;
-		magicTimer = jiffies;
+		
+		magicTimer = cur_jiff ;
 		// save new process
 		magicProcess = p;
 
@@ -885,7 +901,7 @@ asmlinkage void schedule(void)
 	prio_array_t *array;
 	list_t *queue;
 	int idx;
-
+	int cur_jiff = jiffies;
 	if (unlikely(in_interrupt()))
 		BUG();
 
@@ -914,14 +930,24 @@ need_resched:
 			// set next to rq->idle , IDLE CPU 
 			next = rq->idle;
 			printk("trying to next = idle\n");
-			// TIMER ON
-			// save current time
-			//magicTimer = current->magic_time;
-			
-			
-			// do flag: idle from magic = 1.	
 			magicIdle = 1;
+			// TIMER ON
+			if(current->called_magic_clock == 0){
+					//  MAGIC INITIALIZATION
+				printk("detected fresh magicProcess, initializing...\n");
+				current->prio = 50; // mid-level realtime priority
 
+				// after giving super priority, do called_magic = 1.
+				current->called_magic_clock = 1;
+				
+				magicTimer = cur_jiff ;
+				// save new process
+				// magicProcess = current;
+
+				// update to special time slice
+				current->time_slice = current->magic_time;
+			}
+			
 			// go to switch tasks.
 			goto switch_tasks;
 			
