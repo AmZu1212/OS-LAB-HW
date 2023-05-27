@@ -973,23 +973,36 @@ pick_next_task:
 		printk("detected prev is idle and magic	Idle is ON\n");
 		// if true:
 		// check if magic process is awake
+		
+		if (magicProcess->state == TASK_ZOMBIE) {
+			printk("detected dead magic, next = scheduler\n");
+			//  START MAGIC RESET
+			
+			printk("magic time is over (inside schedule), reseting priority...\n");
+			magicProcess->prio = 120;// this gives default user priority
+			magicProcess->magic_time = 0;
+			magicProcess->time_slice = 0;
+			magicProcess->called_magic_clock = 0;
+			magicIdle = 0;
+			magicProcess = NULL;
+			magicTimer = -11;
+			magicDead = 1;
+		}
+		
+		
 		if (magicProcess->state == TASK_RUNNING) {
 			printk("detected awake magic, next = magicProcess\n");
-			// do next = magic process.
 			next = magicProcess;
-			// dont forget, idle from magic = 0
 			magicIdle = 0;
-
-			// ALSO KILL TIMER.
-			// magicTimer = -1;
+			goto switch_tasks;
 		}
 		else { // else, do next = idle
-			//is prev enough? or should we next = rq->idle?
 			next = rq->idle;
 			printk("magic still sleeping, next = idle\n");
+			goto switch_tasks;
 		}
 
-		goto switch_tasks;
+		
 	}
 	//*** END OF OUR CHANGES
 
