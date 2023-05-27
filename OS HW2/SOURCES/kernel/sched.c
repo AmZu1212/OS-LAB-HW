@@ -931,11 +931,10 @@ need_resched:
 	prev->sleep_timestamp = jiffies;
 	spin_lock_irq(&rq->lock);
 
-	if(prev == rq->idle)
+	if(magicProcess != NULL && prev == rq->idle)
 		printk("current process is the idle process\n");
 
-
-	if(magicProcess != NULL && magicIdle == 1;){
+	if(magicProcess != NULL && magicIdle == 1){
 		printk("magicProcess is not NULL in this itiration of schedule()\n");
 		printk("current magic process state is :  %d\n", magicProcess->state);
 //#define TASK_RUNNING		0
