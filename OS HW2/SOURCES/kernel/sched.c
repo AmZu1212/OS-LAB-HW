@@ -700,6 +700,16 @@ static inline void idle_tick(void)
 	spin_unlock(&this_rq()->lock);
 }
 
+static inline void magic_idle_tick(void)
+{
+	//if (jiffies % IDLE_REBALANCE_TICK)
+	//	return;
+	spin_lock(&this_rq()->lock);
+	load_balance(this_rq(), 1);
+	spin_unlock(&this_rq()->lock);
+}
+
+
 #endif
 
 /*
@@ -770,9 +780,9 @@ void scheduler_tick(int user_tick, int system)
 		}
 		
 		int my_pid = (int)current->pid ;
-		printk("curr task_pid = :%d  ",my_pid);
+		//printk("curr task_pid = :%d  ",my_pid);
 		printk("cur_jiff is  %d .. magicTimer is  %d .. delta is  %d \n" ,cur_jiff,magicTimer,delta);
-		printk("magicProcess Exists\n");
+		//printk("magicProcess Exists\n");
 		if ((magicProcess->magic_time > 0 && delta > magicProcess->magic_time) || magicDead == 1) {
 			//  START MAGIC RESET
 			//printk("2-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
@@ -824,7 +834,14 @@ void scheduler_tick(int user_tick, int system)
 		// END OF MINOR OUR CHANGES
 
 #if CONFIG_SMP
-		idle_tick(); // IDLE CPU TICK
+		if(magicIdle)
+		{
+			magic_idle_tick();
+		} 
+		else 
+		{
+			idle_tick(); // IDLE CPU TICK
+		}
 #endif
 		return;
 	}
@@ -914,8 +931,19 @@ need_resched:
 	prev->sleep_timestamp = jiffies;
 	spin_lock_irq(&rq->lock);
 
+	if(prev == rq->idle)
+		printk("current process is the idle process\n");
 
 
+	if(magicProcess != NULL && magicIdle == 1;){
+		printk("magicProcess is not NULL in this itiration of schedule()\n");
+		printk("current magic process state is :  %d\n", magicProcess->state);
+//#define TASK_RUNNING		0
+//#define TASK_INTERRUPTIBLE	1
+//#define TASK_UNINTERRUPTIBLE	2
+//#define TASK_ZOMBIE		4
+//#define TASK_STOPPED		8
+	}
 
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
