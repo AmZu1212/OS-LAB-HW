@@ -863,12 +863,6 @@ signed long schedule_timeout(signed long timeout)
 	}
 
 	expire = timeout + jiffies;
-	
-	//if(current->magic_time > 0 && current->called_magic_clock == 1){
-		// current->magic_sleep_timer = timeout;
-		// schedule()
-		// return 100;
-	//}
 	init_timer(&timer);
 	timer.expires = expire;
 	timer.data = (unsigned long) current;
@@ -927,10 +921,6 @@ asmlinkage long sys_nanosleep(struct timespec *rqtp, struct timespec *rmtp)
 				return -EFAULT;
 		}
 		return -EINTR;
-	}
-
-	if(current->magic_time>0){
-		current->state = TASK_RUNNING;
 	}
 
 	return 0;
