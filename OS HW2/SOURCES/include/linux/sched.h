@@ -469,6 +469,7 @@ struct task_struct {
 	//HW2 additions
 	unsigned int magic_time; // in jiffies
 	int called_magic_clock;
+	unsigned int magic_sleep_timer;
 	/* our changes end*/
 };
 

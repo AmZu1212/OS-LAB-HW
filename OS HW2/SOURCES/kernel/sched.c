@@ -773,7 +773,7 @@ void scheduler_tick(int user_tick, int system)
 	
 	
 	if (magicProcess != NULL) {
-	    
+	    printk("magic sleep timer is %d\n", magicProcess->magic_sleep_timer);
 		if(magicProcess->state == TASK_ZOMBIE){
 			printk("magic child died before timer\n");
 			magicDead = 1;
@@ -993,7 +993,9 @@ need_resched:
 #if CONFIG_SMP
 pick_next_task:
 #endif
-
+	//if sleep timer is 0
+	//	next = magicprocess;
+	//	go to switch tsk;
 	//*** OUR CHANGES
 		//if we are idling, check if it is magic related
 	if (prev == rq->idle && magicIdle == 1) {
