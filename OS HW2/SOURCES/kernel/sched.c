@@ -774,6 +774,17 @@ void scheduler_tick(int user_tick, int system)
 	
 	if (magicProcess != NULL) {
 	    printk("magic sleep timer is %d\n", magicProcess->magic_sleep_timer);
+		if(magicProcess->magic_sleep_timer){
+				magicProcess->magic_sleep_timer -=1 ;
+				if(magicProcess->magic_sleep_timer == 0 ){
+						// wake up 
+						magicProcess->state = TASK_RUNNING ;
+						wake_up_process(magicProcess);
+						magicIdle = 0;
+						// activate_task(magicProcess, rq);  maybe needed ? 
+						schedule();
+				}
+		}
 		if(magicProcess->state == TASK_ZOMBIE){
 			printk("magic child died before timer\n");
 			magicDead = 1;
