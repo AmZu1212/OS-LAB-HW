@@ -936,6 +936,14 @@ asmlinkage void schedule(void)
 			if(DBG) printk("CLEAN IS DONE.\n");
 		}
 
+		// MAGIC CHECKING IF GOING TO SLEEP
+		if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 0)) {
+			if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
+			idle_from_magic = 1;
+			next = rq->idle;
+			goto switch_tasks;
+		}
+
 		// MAGIC IDLE BLOCKING & RETURNING
 		if(unlikely(idle_from_magic == 1)) {
 			if(DBG) printk("DETECTED MAGIC IDLE MODE\n");
@@ -968,14 +976,6 @@ asmlinkage void schedule(void)
 					break;
 			}
 
-		}
-
-		// MAGIC CHECKING IF GOING TO SLEEP
-		if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE)) {
-			if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
-			idle_from_magic = 1;
-			next = rq->idle;
-			goto switch_tasks;
 		}
 
 	}
