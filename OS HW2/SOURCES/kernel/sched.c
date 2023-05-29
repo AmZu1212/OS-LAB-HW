@@ -764,9 +764,8 @@ void update_magic(unsigned int newMagicDuration) {
 
 	magicDuration = newMagicDuration;
 	magic_timer.expires = newMagicDuration + jiffies;
-	// ask in forum is this is okay
+	// ask in forum if this is okay
 }
-
 
 /* 
  * Called when a magic process wakes up from sleep.
@@ -806,9 +805,13 @@ void scheduler_tick(int user_tick, int system)
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
 	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-		if(DBG) printk("Running start_magic()\n");
+		if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
+	}
+	
+	if(unlikely(magicProcess != NULL)){
+		if(DBG) printk("current jiffies is %d\n", jiffies);
 	}
 
 	if(unlikely(idle_from_magic == 1)) {
@@ -905,7 +908,7 @@ asmlinkage void schedule(void)
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
 	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-		if(DBG) printk("Running start_magic()\n");
+		if(DBG) printk("Running start_magic(), from schedule()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
 	}
@@ -921,6 +924,13 @@ asmlinkage void schedule(void)
 			if(DBG) printk("Exited from update_magic()\n");
 		}
 
+		// MAGIC CHECKING IF GOING TO SLEEP
+		if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 1)) {
+			if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
+			idle_from_magic = 1;
+			next = rq->idle;
+			goto switch_tasks;
+		}
 
 		// MAGIC CHECKING IF DONE
 		if(unlikely(magicProcess->state == TASK_ZOMBIE)) {
@@ -928,6 +938,7 @@ asmlinkage void schedule(void)
 			if(DBG) printk("MAGIC IS DONE, CLEANING...\n");
 			exit_from_magic();
 			if(DBG) printk("CLEAN IS DONE.\n");
+			break;
 		}
 
 		// MAGIC IDLE BLOCKING & RETURNING
@@ -966,6 +977,7 @@ asmlinkage void schedule(void)
 
 	}
 	// ===============================================================================
+
 
 	if (unlikely(in_interrupt()))
 		BUG();
