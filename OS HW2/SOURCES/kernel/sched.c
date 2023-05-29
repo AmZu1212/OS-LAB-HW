@@ -812,6 +812,7 @@ void scheduler_tick(int user_tick, int system)
 	
 	if(unlikely(magicProcess != NULL)){
 		if(DBG) printk("current jiffies is %d\n", (int)jiffies);
+		if(DBG) printk("idle status is %d\n", idle_from_magic);
 	}
 
 	if(unlikely(idle_from_magic == 1)) {
@@ -911,6 +912,9 @@ asmlinkage void schedule(void)
 		if(DBG) printk("Running start_magic(), from schedule()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
+		if(DBG) printk("magicDuration is %d\n", magicDuration);
+		next = magicProcess;
+		goto switch_tasks;
 	}
 
 	// MAGIC PROCESS CODE SEGMENT
