@@ -811,7 +811,7 @@ void scheduler_tick(int user_tick, int system)
 	}
 	
 	if(unlikely(magicProcess != NULL)){
-		if(DBG) printk("current jiffies is %d\n", jiffies);
+		if(DBG) printk("current jiffies is %d\n", (int)jiffies);
 	}
 
 	if(unlikely(idle_from_magic == 1)) {
@@ -938,7 +938,6 @@ asmlinkage void schedule(void)
 			if(DBG) printk("MAGIC IS DONE, CLEANING...\n");
 			exit_from_magic();
 			if(DBG) printk("CLEAN IS DONE.\n");
-			break;
 		}
 
 		// MAGIC IDLE BLOCKING & RETURNING
