@@ -29,10 +29,6 @@
 
 // =================== HW2 DEFINES & INCLUDES =========================
 #define DBG 1
-void start_magic();
-void update_magic(unsigned int newMagicDuration);
-void wakeup_magic();
-void exit_from_magic();
 // ====================================================================
 
 /*
@@ -747,7 +743,7 @@ task_t* magicProcess = NULL;
 void start_magic() {
 	
 	magicProcess = current;
-	MagicDuration = magicProcess->magic_time;
+	magicDuration = magicProcess->magic_time;
 
 	current->started_magic = 1;
 	current->prio = 50;
@@ -762,7 +758,7 @@ void start_magic() {
 
 /* 
  * Called when a magic process calls sys_magic_clock more than once.
- * Updates timer, MagicDuration.
+ * Updates timer, magicDuration.
  */
 void update_magic(unsigned int newMagicDuration) {
 

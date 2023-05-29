@@ -168,6 +168,13 @@ extern void flush_scheduled_tasks(void);
 extern int start_context_thread(void);
 extern int current_is_keventd(void);
 
+// =================== HW2 DEFINES & INCLUDES =========================
+extern void start_magic();
+extern void update_magic(unsigned int newMagicDuration);
+extern void wakeup_magic();
+extern void exit_from_magic();
+// ====================================================================
+
 /*
  * Priority of a process goes from 0..MAX_PRIO-1, valid RT
  * priority is 0..MAX_RT_PRIO-1, and SCHED_OTHER tasks are
