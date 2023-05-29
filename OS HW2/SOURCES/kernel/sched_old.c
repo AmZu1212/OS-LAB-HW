@@ -27,13 +27,13 @@
 #include <linux/completion.h>
 #include <linux/kernel_stat.h>
 
-#define DBG 1
-
 /*
  * Convert user-nice values [ -20 ... 0 ... 19 ]
  * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
  * and back.
  */
+
+//MAX_RT_PRIO == 100
 #define NICE_TO_PRIO(nice)	(MAX_RT_PRIO + (nice) + 20)
 #define PRIO_TO_NICE(prio)	((prio) - MAX_RT_PRIO - 20)
 #define TASK_NICE(p)		PRIO_TO_NICE((p)->static_prio)
@@ -700,6 +700,16 @@ static inline void idle_tick(void)
 	spin_unlock(&this_rq()->lock);
 }
 
+static inline void magic_idle_tick(void)
+{
+	//if (jiffies % IDLE_REBALANCE_TICK)
+	//	return;
+	spin_lock(&this_rq()->lock);
+	load_balance(this_rq(), 1);
+	spin_unlock(&this_rq()->lock);
+}
+
+
 #endif
 
 /*
@@ -716,114 +726,137 @@ static inline void idle_tick(void)
 		(jiffies - (rq)->expired_timestamp >= \
 			STARVATION_LIMIT * ((rq)->nr_running) + 1))
 
-
-
-
-
-// ========================= HW2 VARIABLES ======================
-// Magic time timer. In jiffies.
-struct timer_list magic_timer;
-unsigned int magicDuration = 0;
-
-// Idle from magic indicator.
-int idle_from_magic = 0;
-
-//Current magic Process.
-task_t* magicProcess = NULL;
-// ===============================================================
-
-
-// ========================= HW2 FUNCTIONS ======================= 
-/* 
- * Called when a magic process starts running.
- * Starts the magic timer.
- */
-void start_magic() {
-	
-	magicProcess = current;
-	MagicDuration = magicProcess->magic_time;
-
-	current->started_magic = 1;
-	current->prio = 50;
-
-	// timer initialization
-	init_timer(&magic_timer);
-	magic_timer.expires = magicDuration + jiffies;
-	magic_timer.data = (unsigned long) current;
-	magic_timer.function = exit_from_magic;
-	add_timer(&magic_timer);
-}
-
-/* 
- * Called when a magic process calls sys_magic_clock more than once.
- * Updates timer, MagicDuration.
- */
-void update_magic(unsigned int newMagicDuration) {
-
-	magicDuration = newMagicDuration;
-	magic_timer.expires = newMagicDuration + jiffies;
-	// ask in forum is this is okay
-}
-
-
-/* 
- * Called when a magic process wakes up from sleep.
- */
-void wakeup_magic() {
-
-	// maybe not needed.
-
-}
-
-/* 
- * Called when magic_timer ends. 
- * Resets the magicProcess & deletes the timer.
- */
-void exit_from_magic() {
-
-	idle_from_magic = 0;
-	magicDuration = 0;
-	del_timer_sync(&magic_timer);
-	magicProcess->prio = 120;
-	magicProcess = NULL;
-}
-// ==================================================================
-
-
 /*
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
+  
+//	======================= NEW DECLARATIONS ====================== //
+
+// declare global timer (-1 for non active....)
+int magicTimer = -1;
+// ASSUME INTEGER TIMER FOR NOW, MARK TIMER LINES AND LOGIC FOR SWITCHING LATER.
+// THE TIMER IS RESPONSIBLE FOR KEEPING THE MAGIC PROCESS IN CHECK WHILE
+// RUNNING AND ALSO IDLING
+// NOTE FOR LATER: i think we need to define a jiffie timer, make it so initial 
+// value is magic_time, and every tick check if its done, then revoke access.
+
+
+//meant to differentiate between a "magic" idle and a regular idle.
+int magicIdle = 0;
+int magicDead = 0;
+
+
+// a task pointer to return to after idling the cpu assumign there is enough timer left.
+// also an after thought, we should keep timer updated with timeslice, with that said
+// time slice is not realtime...?
+task_t* magicProcess = NULL;
+
+//	======================= END OF NEW DECLARATIONS ====================== //
+
+
 void scheduler_tick(int user_tick, int system)
 {
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
+	int cur_jiff = (int)jiffies ;
 
-	// ============================= HW2 CODE SEGMENT ================================
-	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
-	// will be in both
-	if(unlikely((p->magic_time > 0) && (p->started_magic == 0))) {
-		if(DBG) printk("Running start_magic()\n");
-		start_magic();
-		if(DBG) printk("Exited from start_magic()\n");
+	
+	
+
+	// ================== OUR CHANGES ==================
+	// ================ TIMER TICKER
+	// COUNT TIMER TICK, MAYBE REMOVE LATER IF NECESSARY
+	
+	int delta = cur_jiff - magicTimer;
+	
+	
+	if (magicProcess != NULL) {
+	    printk("magic sleep timer is %d\n", magicProcess->magic_sleep_timer);
+		if(magicProcess->magic_sleep_timer){
+				magicProcess->magic_sleep_timer -=1 ;
+				if(magicProcess->magic_sleep_timer == 0 ){
+						// wake up 
+						magicProcess->state = TASK_RUNNING ;
+						wake_up_process(magicProcess);
+						magicIdle = 0;
+						// activate_task(magicProcess, rq);  maybe needed ? 
+						schedule();
+				}
+		}
+		if(magicProcess->state == TASK_ZOMBIE){
+			printk("magic child died before timer\n");
+			magicDead = 1;
+		}
+		
+		int my_pid = (int)current->pid ;
+		//printk("curr task_pid = :%d  ",my_pid);
+		printk("cur_jiff is  %d .. magicTimer is  %d .. delta is  %d \n" ,cur_jiff,magicTimer,delta);
+		//printk("magicProcess Exists\n");
+		if ((magicProcess->magic_time > 0 && delta > magicProcess->magic_time) || magicDead == 1) {
+			//  START MAGIC RESET
+			//printk("2-magic time is %d, delta is %d\n", magicProcess->magic_time, delta);
+			printk("magic time is over, reseting priority...\n");
+			magicProcess->prio = 120;//effective_prio(p); // this gives default user priority
+			magicProcess->magic_time = 0;
+			magicProcess->time_slice = 0;
+			magicProcess->called_magic_clock = 0;
+			magicIdle = 0;
+			magicProcess = NULL;
+			magicTimer = -10;
+			magicDead = 0;
+		}
+	}
+	
+	if(p->magic_time > 0 && p->called_magic_clock == 0) {
+		//  MAGIC INITIALIZATION
+		printk("detected fresh magicProcess, initializing...\n");
+		p->prio = 50; // mid-level realtime priority
+
+		// after giving super priority, do called_magic = 1.
+		p->called_magic_clock = 1;
+		
+		magicTimer = cur_jiff ;
+		// save new process
+		magicProcess = p;
+
+		// update to special time slice
+		p->time_slice = p->magic_time;
+
+		// the rest will be taken care of automatically (the lazy approach)
 	}
 
-	if(idle_from_magic == 1) {
-		// somehow block other processes from running, maybe in schedule() itself
-		// maybe return early?
-		return;
-	}
-	// ===============================================================================
-
+	// if we enter this, current task is CPU_IDLE
+	// We need to decrement the time_slice and timer for normal operation.(?)
+	// kater decide which one is better to use
 	if (p == rq->idle) {
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
 			kstat.per_cpu_system[cpu] += system;
+
+		// MINOR OUR CHANGES
+		// decrementing magic task time slice
+		if(magicProcess != NULL) {
+			printk("checking magic timeslice, timeslice = %d\n",magicProcess->time_slice);
+			if (magicProcess->time_slice != 0) {
+				magicProcess->time_slice--;
+			}
+		}
+		// END OF MINOR OUR CHANGES
+
 #if CONFIG_SMP
-		idle_tick();
+		if(magicIdle)
+		{
+			magic_idle_tick();
+		} 
+		else 
+		{
+			idle_tick(); // IDLE CPU TICK
+		}
 #endif
 		return;
 	}
+
 	if (TASK_NICE(p) > 0)
 		kstat.per_cpu_nice[cpu] += user_tick;
 	else
@@ -896,74 +929,7 @@ asmlinkage void schedule(void)
 	prio_array_t *array;
 	list_t *queue;
 	int idx;
-
-
-	// ============================= HW2 CODE SEGMENT ================================
-	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
-	// will be in both
-	if(unlikely((p->magic_time > 0) && (p->started_magic == 0))) {
-		if(DBG) printk("Running start_magic()\n");
-		start_magic();
-		if(DBG) printk("Exited from start_magic()\n");
-	}
-
-	// MAGIC PROCESS CODE SEGMENT
-	if(unlikely(magicProcess != NULL)) {
-		
-		// MAGIC TIMER UPDATING
-		if(unlikely(magicDuration != magicProcess->magic_time)) {
-			// **BUG IF CALLED TWICE WITH THE SAME DURATION**
-			if(DBG) printk("Running update_magic()\n");
-			update_magic(magicProcess->magic_time);
-			if(DBG) printk("Exited from update_magic()\n");
-		}
-
-
-		// MAGIC CHECKING IF DONE
-		if(magicProcess->state == TASK_ZOMBIE) {
-			// MAGIC IS DONE, CLEAN...
-			if(DBG) printk("MAGIC IS DONE, CLEANING...\n");
-			exit_from_magic();
-			if(DBG) printk("CLEAN IS DONE.\n");
-		}
-
-		// MAGIC IDLE BLOCKING & RETURNING
-		if(unlikely(idle_from_magic == 1)) {
-			if(DBG) printk("DETECTED MAGIC IDLE MODE\n");
-			switch(magicProcess->state)
-			{
-				// MAGIC WOKE UP
-				case TASK_RUNNING: 
-						// RETURN TO MAGIC PROCESS
-						if(DBG) printk("RETURN TO MAGIC PROCESS\n");
-						idle_from_magic = 0;
-						next = magicProcess;
-						goto switch_tasks;
-
-				// MAGIC STILL SLEEPING ZzZ...
-				case TASK_INTERRUPTIBLE:
-						// STAY IDLE
-						if(DBG) printk("STAY IDLE\n");
-						next = rq->idle;
-						goto switch_tasks;
-
-				case TASK_ZOMBIE:
-						// **BUG MAGIC PROCESS DIED SOMEHOW?**
-						if(DBG) printk("**BUG MAGIC PROCESS DIED SOMEHOW?**\n");
-						exit_from_magic();
-						goto switch_tasks;
-
-				default:
-						// **BUG MAGIC NOT SUPPOSED TO REACH THIS**
-						if(DBG) printk("**BUG MAGIC NOT SUPPOSED TO REACH THIS**\n");
-					break;
-			}
-
-		}
-
-	}
-	// ===============================================================================
-
+	int cur_jiff = jiffies;
 	if (unlikely(in_interrupt()))
 		BUG();
 
@@ -976,8 +942,56 @@ need_resched:
 	prev->sleep_timestamp = jiffies;
 	spin_lock_irq(&rq->lock);
 
+	if(magicProcess != NULL && prev == rq->idle)
+		printk("current process is the idle process\n");
+
+	if(magicProcess != NULL && magicIdle == 1){
+		printk("magicProcess is not NULL in this itiration of schedule()\n");
+		printk("current magic process state is :  %d\n", magicProcess->state);
+//#define TASK_RUNNING		0
+//#define TASK_INTERRUPTIBLE	1
+//#define TASK_UNINTERRUPTIBLE	2
+//#define TASK_ZOMBIE		4
+//#define TASK_STOPPED		8
+	}
+
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
+		//*** OUR CHANGES
+		// if we are here we are sleeping...
+		// check if i am a magic process
+		if(current->magic_time > 0) {
+			printk("detected suspended magic process\n");
+			// if true :
+			// save pointer to magic task
+			magicProcess = current;
+			// set next to rq->idle , IDLE CPU 
+			next = rq->idle;
+			printk("trying to next = idle\n");
+			magicIdle = 1;
+			// TIMER ON
+			if(current->called_magic_clock == 0){
+					//  MAGIC INITIALIZATION
+				printk("detected fresh magicProcess, initializing...\n");
+				current->prio = 50; // mid-level realtime priority
+
+				// after giving super priority, do called_magic = 1.
+				current->called_magic_clock = 1;
+				
+				magicTimer = cur_jiff ;
+				// save new process
+				// magicProcess = current;
+
+				// update to special time slice
+				current->time_slice = current->magic_time;
+			}
+			
+			// go to switch tasks.
+			goto switch_tasks;
+			
+		}
+		// else, this is a normal task sleep cycle...
+		//*** END OF OUR CHANGES
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;
@@ -990,8 +1004,52 @@ need_resched:
 #if CONFIG_SMP
 pick_next_task:
 #endif
+	//if sleep timer is 0
+	//	next = magicprocess;
+	//	go to switch tsk;
+	//*** OUR CHANGES
+		//if we are idling, check if it is magic related
+	if (prev == rq->idle && magicIdle == 1) {
+		printk("detected prev is idle and magic	Idle is ON\n");
+		// if true:
+		// check if magic process is awake
+		
+		if (magicProcess->state == TASK_ZOMBIE) {
+			printk("detected dead magic, next = scheduler\n");
+			//  START MAGIC RESET
+			
+			printk("magic time is over (inside schedule), reseting priority...\n");
+			magicProcess->prio = 120;// this gives default user priority
+			magicProcess->magic_time = 0;
+			magicProcess->time_slice = 0;
+			magicProcess->called_magic_clock = 0;
+			magicIdle = 0;
+			magicProcess = NULL;
+			magicTimer = -11;
+			magicDead = 1;
+		}
+		
+		
+		if (magicProcess->state == TASK_RUNNING) {
+			printk("detected awake magic, next = magicProcess\n");
+			next = magicProcess;
+			magicIdle = 0;
+			goto switch_tasks;
+		}
+		else { // else, do next = idle
+			next = rq->idle;
+			printk("magic still sleeping, next = idle\n");
+			goto switch_tasks;
+		}
+
+		
+	}
+	//*** END OF OUR CHANGES
+
 	if (unlikely(!rq->nr_running)) {
 #if CONFIG_SMP
+		
+		
 		load_balance(rq, 1);
 		if (rq->nr_running)
 			goto pick_next_task;
@@ -1034,6 +1092,7 @@ switch_tasks:
 	finish_arch_schedule(prev);
 
 	reacquire_kernel_lock(current);
+
 	if (need_resched())
 		goto need_resched;
 }
@@ -1154,7 +1213,7 @@ void interruptible_sleep_on(wait_queue_head_t *q)
 long interruptible_sleep_on_timeout(wait_queue_head_t *q, long timeout)
 {
 	SLEEP_ON_VAR
-
+ 
 	current->state = TASK_INTERRUPTIBLE;
 
 	SLEEP_ON_HEAD
