@@ -809,9 +809,10 @@ void scheduler_tick(int user_tick, int system)
 		if(DBG) printk("Exited from start_magic()\n");
 	}
 
-	if(idle_from_magic == 1) {
+	if(unlikely(idle_from_magic == 1)) {
 		// somehow block other processes from running, maybe in schedule() itself
 		// maybe return early?
+		if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
 		return;
 	}
 	// ===============================================================================
@@ -920,7 +921,7 @@ asmlinkage void schedule(void)
 
 
 		// MAGIC CHECKING IF DONE
-		if(magicProcess->state == TASK_ZOMBIE) {
+		if(unlikely(magicProcess->state == TASK_ZOMBIE)) {
 			// MAGIC IS DONE, CLEAN...
 			if(DBG) printk("MAGIC IS DONE, CLEANING...\n");
 			exit_from_magic();
