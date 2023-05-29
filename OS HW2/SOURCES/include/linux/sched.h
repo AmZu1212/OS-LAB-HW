@@ -169,10 +169,10 @@ extern int start_context_thread(void);
 extern int current_is_keventd(void);
 
 // =================== HW2 DEFINES & INCLUDES =========================
-extern void start_magic();
+extern void start_magic(void);
 extern void update_magic(unsigned int newMagicDuration);
-extern void wakeup_magic();
-extern void exit_from_magic();
+extern void wakeup_magic(void);
+extern void exit_from_magic(void);
 // ====================================================================
 
 /*

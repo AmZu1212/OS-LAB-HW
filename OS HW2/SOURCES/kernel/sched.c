@@ -740,7 +740,7 @@ task_t* magicProcess = NULL;
  * Called when a magic process starts running.
  * Starts the magic timer.
  */
-void start_magic() {
+void start_magic(void) {
 	
 	magicProcess = current;
 	magicDuration = magicProcess->magic_time;
@@ -770,7 +770,7 @@ void update_magic(unsigned int newMagicDuration) {
 /* 
  * Called when a magic process wakes up from sleep.
  */
-void wakeup_magic() {
+void wakeup_magic(void) {
 
 	// maybe not needed.
 
@@ -780,7 +780,7 @@ void wakeup_magic() {
  * Called when magic_timer ends. 
  * Resets the magicProcess & deletes the timer.
  */
-void exit_from_magic() {
+void exit_from_magic(void) {
 
 	idle_from_magic = 0;
 	magicDuration = 0;
