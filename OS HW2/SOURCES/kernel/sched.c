@@ -27,7 +27,13 @@
 #include <linux/completion.h>
 #include <linux/kernel_stat.h>
 
+// =================== HW2 DEFINES & INCLUDES =========================
 #define DBG 1
+void start_magic();
+void update_magic(unsigned int newMagicDuration);
+void wakeup_magic();
+void exit_from_magic();
+// ====================================================================
 
 /*
  * Convert user-nice values [ -20 ... 0 ... 19 ]
@@ -803,7 +809,7 @@ void scheduler_tick(int user_tick, int system)
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
-	if(unlikely((p->magic_time > 0) && (p->started_magic == 0))) {
+	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
 		if(DBG) printk("Running start_magic()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
@@ -902,7 +908,7 @@ asmlinkage void schedule(void)
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
-	if(unlikely((p->magic_time > 0) && (p->started_magic == 0))) {
+	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
 		if(DBG) printk("Running start_magic()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
