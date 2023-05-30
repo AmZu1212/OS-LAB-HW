@@ -798,6 +798,7 @@ void exit_from_magic(void) {
 	magicProcess->prio = 120;
 	magicProcess->started_magic = 0;
 	magicProcess = NULL;
+	MAGICTIME = 0;
 }
 // ==================================================================
 
@@ -819,7 +820,7 @@ void scheduler_tick(int user_tick, int system)
 			exit_from_magic();
 		}
 	}
-	
+
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
