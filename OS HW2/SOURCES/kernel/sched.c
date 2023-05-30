@@ -817,6 +817,7 @@ void scheduler_tick(int user_tick, int system)
 	if(unlikely(magicProcess != NULL)){
 		if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
 		if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
+		if(DBG) printk("current running process is: %d \n", (int)current->pid);
 	}
 
 	if(unlikely(MAGICTIME > 0)) {
@@ -1042,6 +1043,7 @@ need_resched:
 
 		// MAGIC CHECKING IF GOING TO SLEEP
 		if(magicProcess != NULL) {
+			if(DBG) printk("magic sleep try detected in switch\n");
 			if(likely(prev == magicProcess && idle_from_magic == 0 )) {
 				if(DBG) printk("MAGIC IS TRYING TO SLEEP, inside normal sleep scheduler\n");
 				idle_from_magic = 1;
