@@ -736,6 +736,10 @@ task_t* magicProcess = NULL;
 
 // magic process sleep indicator
 int magic_sleep_flag = 0;
+
+// our magic timer (its better i promise)
+
+int MAGICTIME = 0;
 // ===============================================================
 
 
@@ -751,6 +755,8 @@ void start_magic(void) {
 
 	current->started_magic = 1;
 	current->prio = 50;
+
+	MAGICTIME = magicDuration;
 
 	// timer initialization
 	init_timer(&magic_timer);
@@ -806,6 +812,14 @@ void scheduler_tick(int user_tick, int system)
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
 
+	if(MAGICTIME > 0) {
+		MAGICTIME--;
+		if(MAGICTIME == 0) {
+			if(DBG) printf("MAGICTIME reached 0, exiting...\n");
+			exit_from_magic();
+		}
+	}
+	
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
@@ -1005,8 +1019,8 @@ need_resched:
 	case TASK_INTERRUPTIBLE:
 
 		// MAGIC CHECKING IF GOING TO SLEEP
-		if(magicProcess != NULL){
-			if(likely(prev == magicProcess && idle_from_magic == 0 && )) {
+		if(magicProcess != NULL) {
+			if(likely(prev == magicProcess && idle_from_magic == 0 )) {
 				if(DBG) printk("MAGIC IS TRYING TO SLEEP, inside normal sleep scheduler\n");
 				idle_from_magic = 1;
 				magic_sleep_flag = 1;
