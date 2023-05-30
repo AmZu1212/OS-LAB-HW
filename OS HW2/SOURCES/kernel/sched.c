@@ -914,15 +914,7 @@ asmlinkage void schedule(void)
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
-	//if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-	//	if(DBG) printk("Running start_magic(), from schedule()\n");
-	//	start_magic();
-	//	if(DBG) printk("Exited from start_magic()\n");
-	//	if(DBG) printk("magicDuration is %d\n", magicDuration);
-	//	next = magicProcess;
-	//	goto switch_tasks;
-	//}
-
+	
 	// MAGIC PROCESS CODE SEGMENT
 	if(unlikely(magicProcess != NULL)) {
 		
@@ -943,13 +935,13 @@ asmlinkage void schedule(void)
 		}
 
 		// MAGIC CHECKING IF GOING TO SLEEP
-		if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 0)) {
-			if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
-			idle_from_magic = 1;
-			magic_sleep_flag = 1;
-			next = rq->idle;
-			goto switch_tasks;
-		}
+		//if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 0)) {
+		//	if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
+		//	idle_from_magic = 1;
+		//	magic_sleep_flag = 1;
+		//	next = rq->idle;
+		//	goto switch_tasks;
+		//}
 
 		// MAGIC IDLE BLOCKING & RETURNING
 		if(unlikely(idle_from_magic == 1)) {
@@ -987,6 +979,13 @@ asmlinkage void schedule(void)
 		}
 
 	}
+	
+	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
+		if(DBG) printk("Running start_magic(), from schedule()\n");
+		start_magic();
+		if(DBG) printk("Exited from start_magic()\n");
+		if(DBG) printk("magicDuration is %d\n", magicDuration);
+	}
 	// ===============================================================================
 
 
@@ -1004,12 +1003,23 @@ need_resched:
 	
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
-		if(likely(magic_sleep_flag == 0)) {// MAGIC ADDITIONAL IF
-			if (unlikely(signal_pending(prev))) {
-				prev->state = TASK_RUNNING;
-				break;
+
+		// MAGIC CHECKING IF GOING TO SLEEP
+		if(magicProcess != NULL){
+			if(likely(prev == magicProcess && idle_from_magic == 0 && )) {
+				if(DBG) printk("MAGIC IS TRYING TO SLEEP, inside normal sleep scheduler\n");
+				idle_from_magic = 1;
+				magic_sleep_flag = 1;
+				next = rq->idle;
+				goto switch_tasks;
 			}
 		}
+
+		if (unlikely(signal_pending(prev))) {
+			prev->state = TASK_RUNNING;
+			break;
+		}
+		
 	default:
 		deactivate_task(prev, rq);
 	case TASK_RUNNING:
