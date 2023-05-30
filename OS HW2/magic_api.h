@@ -208,7 +208,7 @@ int magic_clock(unsigned int seconds)
 		"popl %%ebx;"
 		"popl %%eax;"
 		: "=m" (res)
-		: "m" (pid)
+		: "m" (seconds)
 	);
 
 

@@ -353,6 +353,7 @@ void kick_if_running(task_t * p)
  */
 static int try_to_wake_up(task_t * p, int sync)
 {
+	
 	unsigned long flags;
 	int success = 0;
 	long old_state;
@@ -727,11 +728,14 @@ static inline void idle_tick(void)
 struct timer_list magic_timer;
 unsigned int magicDuration = 0;
 
-// Idle from magic indicator.
+// Idle from magic indicator
 int idle_from_magic = 0;
 
-//Current magic Process.
+//Current magic process.
 task_t* magicProcess = NULL;
+
+// magic process sleep indicator
+int magic_sleep_flag = 0;
 // ===============================================================
 
 
@@ -741,7 +745,7 @@ task_t* magicProcess = NULL;
  * Starts the magic timer.
  */
 void start_magic(void) {
-	
+	if (DBG) printk("start_magic() was called\n");
 	magicProcess = current;
 	magicDuration = magicProcess->magic_time;
 
@@ -761,7 +765,7 @@ void start_magic(void) {
  * Updates timer, magicDuration.
  */
 void update_magic(unsigned int newMagicDuration) {
-
+	if (DBG) printk("update_magic() was called\n");
 	magicDuration = newMagicDuration;
 	magic_timer.expires = newMagicDuration + jiffies;
 	// ask in forum if this is okay
@@ -781,11 +785,12 @@ void wakeup_magic(void) {
  * Resets the magicProcess & deletes the timer.
  */
 void exit_from_magic(void) {
-
+	if (DBG) printk("exit_from_magic() was called\n");
 	idle_from_magic = 0;
 	magicDuration = 0;
 	del_timer_sync(&magic_timer);
 	magicProcess->prio = 120;
+	magicProcess->started_magic = 0;
 	magicProcess = NULL;
 }
 // ==================================================================
@@ -808,11 +813,11 @@ void scheduler_tick(int user_tick, int system)
 		if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
 		start_magic();
 		if(DBG) printk("Exited from start_magic()\n");
+		if(DBG) printk("magicDuration is %d\n", magicDuration);
 	}
 	
 	if(unlikely(magicProcess != NULL)){
-		if(DBG) printk("current jiffies is %d\n", (int)jiffies);
-		if(DBG) printk("idle status is %d\n", idle_from_magic);
+		if(DBG) printk("current jiffies is %d\nidle status is %d\n", (int)jiffies, idle_from_magic);
 	}
 
 	if(unlikely(idle_from_magic == 1)) {
@@ -827,6 +832,7 @@ void scheduler_tick(int user_tick, int system)
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
 			kstat.per_cpu_system[cpu] += system;
 #if CONFIG_SMP
+		if(DBG) printk("idle_tick() print\n");
 		idle_tick();
 #endif
 		return;
@@ -908,14 +914,14 @@ asmlinkage void schedule(void)
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
-	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-		if(DBG) printk("Running start_magic(), from schedule()\n");
-		start_magic();
-		if(DBG) printk("Exited from start_magic()\n");
-		if(DBG) printk("magicDuration is %d\n", magicDuration);
-		next = magicProcess;
-		goto switch_tasks;
-	}
+	//if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
+	//	if(DBG) printk("Running start_magic(), from schedule()\n");
+	//	start_magic();
+	//	if(DBG) printk("Exited from start_magic()\n");
+	//	if(DBG) printk("magicDuration is %d\n", magicDuration);
+	//	next = magicProcess;
+	//	goto switch_tasks;
+	//}
 
 	// MAGIC PROCESS CODE SEGMENT
 	if(unlikely(magicProcess != NULL)) {
@@ -940,6 +946,7 @@ asmlinkage void schedule(void)
 		if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 0)) {
 			if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
 			idle_from_magic = 1;
+			magic_sleep_flag = 1;
 			next = rq->idle;
 			goto switch_tasks;
 		}
@@ -954,6 +961,7 @@ asmlinkage void schedule(void)
 						// RETURN TO MAGIC PROCESS
 						if(DBG) printk("RETURN TO MAGIC PROCESS\n");
 						idle_from_magic = 0;
+						magic_sleep_flag = 0;
 						next = magicProcess;
 						goto switch_tasks;
 
@@ -993,12 +1001,14 @@ need_resched:
 	prepare_arch_schedule(prev);
 	prev->sleep_timestamp = jiffies;
 	spin_lock_irq(&rq->lock);
-
+	
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
-		if (unlikely(signal_pending(prev))) {
-			prev->state = TASK_RUNNING;
-			break;
+		if(likely(magic_sleep_flag == 0)) {// MAGIC ADDITIONAL IF
+			if (unlikely(signal_pending(prev))) {
+				prev->state = TASK_RUNNING;
+				break;
+			}
 		}
 	default:
 		deactivate_task(prev, rq);
