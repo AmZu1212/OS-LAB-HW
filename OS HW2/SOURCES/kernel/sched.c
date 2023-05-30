@@ -759,11 +759,11 @@ void start_magic(void) {
 	MAGICTIME = magicDuration;
 
 	// timer initialization
-	init_timer(&magic_timer);
-	magic_timer.expires = magicDuration + jiffies;
-	magic_timer.data = (unsigned long) current;
-	magic_timer.function = exit_from_magic;
-	add_timer(&magic_timer);
+	//init_timer(&magic_timer);
+	//magic_timer.expires = magicDuration + jiffies;
+	//magic_timer.data = (unsigned long) current;
+	//magic_timer.function = exit_from_magic;
+	//add_timer(&magic_timer);
 }
 
 /* 
@@ -773,7 +773,8 @@ void start_magic(void) {
 void update_magic(unsigned int newMagicDuration) {
 	if (DBG) printk("update_magic() was called\n");
 	magicDuration = newMagicDuration;
-	magic_timer.expires = newMagicDuration + jiffies;
+	MAGICTIME = newMagicDuration;
+	//magic_timer.expires = newMagicDuration + jiffies;
 	// ask in forum if this is okay
 }
 
@@ -794,7 +795,7 @@ void exit_from_magic(void) {
 	if (DBG) printk("exit_from_magic() was called\n");
 	idle_from_magic = 0;
 	magicDuration = 0;
-	del_timer_sync(&magic_timer);
+	//del_timer_sync(&magic_timer);
 	magicProcess->prio = 120;
 	magicProcess->started_magic = 0;
 	magicProcess = NULL;
