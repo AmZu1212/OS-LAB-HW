@@ -783,7 +783,7 @@ void update_magic(unsigned int newMagicDuration) {
  */
 void wakeup_magic(void) {
 
-	// maybe not needed.
+	//trying to wake up magic
 
 }
 
@@ -823,6 +823,21 @@ void scheduler_tick(int user_tick, int system)
 		if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
 		if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
 		if(DBG) printk("current running process is: %d \n", (int)current->pid);
+		if(DBG) printk("magic Process need_resched flag is: %d\n", magicProcess->need_resched);
+		if(idle_from_magic == 1) {
+
+			//trying to wake up magic
+			int status = wake_up_process(magicProcess);
+			if(DBG) printk("wake status is %d\n", status);
+			if(status == 1) { 
+				if(DBG) printk("magicProcess awakened successfuly\n");
+				idle_from_magic = 0;
+				magic_sleep_flag = 0;
+				schedule();
+			}
+
+			if(DBG) printk("magic Process state after trying to wake is: %d [0 - running, 1 - sleeping]\n", (int)magicProcess->state);
+		}
 	}
 
 	if(unlikely(MAGICTIME > 0)) {
