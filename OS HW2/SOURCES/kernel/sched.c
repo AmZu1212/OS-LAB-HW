@@ -807,32 +807,47 @@ void exit_from_magic(void) {
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
+int bugblocker = 0;
 void scheduler_tick(int user_tick, int system)
 {
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
+	if(unlikely(magicProcess != NULL)){
+		if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
+		if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
+	}
 
-	if(MAGICTIME > 0) {
-		MAGICTIME--;
-		if(MAGICTIME == 0) {
-			if(DBG) printf("MAGICTIME reached 0, exiting...\n");
+	if(unlikely(MAGICTIME > 0)) {
+		MAGICTIME -= 1;
+		if(DBG) printk("MAGICTIME = %d\n", MAGICTIME);
+
+		if(unlikely(MAGICTIME == 0)) {
+			if(DBG) printk("MAGICTIME reached 0, exiting...\n");
 			exit_from_magic();
+			bugblocker = 1;
 		}
 	}
 
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
-	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-		if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
-		start_magic();
-		if(DBG) printk("Exited from start_magic()\n");
-		if(DBG) printk("magicDuration is %d\n", magicDuration);
-	}
+	
 	
 	if(unlikely(magicProcess != NULL)){
 		if(DBG) printk("current jiffies is %d\nidle status is %d\n", (int)jiffies, idle_from_magic);
+	} else {
+		if(unlikely((current->magic_time > 0) && (current->started_magic == 0) && magicProcess == NULL)) {
+				if (bugblocker) {
+					printk("bug detected in scheduler_tick() start\n");
+				} else {
+					if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
+					start_magic();
+					if(DBG) printk("Exited from start_magic()\n");
+					if(DBG) printk("magicDuration is %d\n", magicDuration);
+				}
+
+		}
 	}
 
 	if(unlikely(idle_from_magic == 1)) {
@@ -929,6 +944,18 @@ asmlinkage void schedule(void)
 	// ============================= HW2 CODE SEGMENT ================================
 	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
 	// will be in both
+
+	if(unlikely((current->magic_time > 0) && (current->started_magic == 0) && (magicProcess == NULL))) {
+		if (bugblocker) {
+			printk("bug detected in schedule() start\n");
+		} else {
+			if(DBG) printk("Running start_magic(), from schedule()\n");
+			start_magic();
+			if(DBG) printk("Exited from start_magic()\n");
+			if(DBG) printk("magicDuration is %d\n", magicDuration);
+		}
+	}
+
 	
 	// MAGIC PROCESS CODE SEGMENT
 	if(unlikely(magicProcess != NULL)) {
@@ -993,14 +1020,7 @@ asmlinkage void schedule(void)
 
 		}
 
-	}
-	
-	if(unlikely((current->magic_time > 0) && (current->started_magic == 0))) {
-		if(DBG) printk("Running start_magic(), from schedule()\n");
-		start_magic();
-		if(DBG) printk("Exited from start_magic()\n");
-		if(DBG) printk("magicDuration is %d\n", magicDuration);
-	}
+	} 
 	// ===============================================================================
 
 
