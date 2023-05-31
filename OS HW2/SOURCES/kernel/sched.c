@@ -31,6 +31,25 @@
 #define DBG 1
 // ====================================================================
 
+// ========================= HW2 VARIABLES ======================
+// Magic time timer. In jiffies.
+struct timer_list magic_timer;
+unsigned int magicDuration = 0;
+
+// Idle from magic indicator
+int idle_from_magic = 0;
+
+//Current magic process.
+task_t* magicProcess = NULL;
+
+// magic process sleep indicator
+int magic_sleep_flag = 0;
+
+// our magic timer (its better i promise)
+
+int MAGICTIME = 0;
+// ===============================================================
+
 /*
  * Convert user-nice values [ -20 ... 0 ... 19 ]
  * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
@@ -353,15 +372,20 @@ void kick_if_running(task_t * p)
  */
 static int try_to_wake_up(task_t * p, int sync)
 {
+
 	
 	unsigned long flags;
 	int success = 0;
 	long old_state;
 	runqueue_t *rq;
 
+	if(DBG) if (unlikely(p == magicProcess)){ printk("tried to wake up magic Process.\n");}
+
+
 repeat_lock_task:
 	rq = task_rq_lock(p, &flags);
 	old_state = p->state;
+
 	if (!p->array) {
 		/*
 		 * Fast-migrate the task if it's not running or runnable
@@ -720,29 +744,6 @@ static inline void idle_tick(void)
 			STARVATION_LIMIT * ((rq)->nr_running) + 1))
 
 
-
-
-
-// ========================= HW2 VARIABLES ======================
-// Magic time timer. In jiffies.
-struct timer_list magic_timer;
-unsigned int magicDuration = 0;
-
-// Idle from magic indicator
-int idle_from_magic = 0;
-
-//Current magic process.
-task_t* magicProcess = NULL;
-
-// magic process sleep indicator
-int magic_sleep_flag = 0;
-
-// our magic timer (its better i promise)
-
-int MAGICTIME = 0;
-// ===============================================================
-
-
 // ========================= HW2 FUNCTIONS ======================= 
 /* 
  * Called when a magic process starts running.
@@ -754,7 +755,11 @@ void start_magic(void) {
 	magicDuration = current->magic_time;
 
 	current->started_magic = 1;
+
+	dequeue_task(magicProcess, magicProcess->array);
 	current->prio = 50;
+	enqueue_task(magicProcess, magicProcess->array);
+
 	current->time_slice = current->magic_time;
 	MAGICTIME = magicDuration;
 
@@ -793,11 +798,20 @@ void wakeup_magic(void) {
  */
 void exit_from_magic(void) {
 	if (DBG) printk("exit_from_magic() was called\n");
+
+	if(magic_sleep_flag == 0) {
+		dequeue_task(magicProcess, magicProcess->array);
+		current->prio = 120;
+		enqueue_task(magicProcess, magicProcess->array);
+	} else {
+		magicProcess->prio = 120;
+	}
+
 	idle_from_magic = 0;
 	magic_sleep_flag = 0;
 	magicDuration = 0;
 	//del_timer_sync(&magic_timer);
-	magicProcess->prio = 120;
+
 	magicProcess->started_magic = 0;
 	magicProcess->magic_time = 0;
 	magicProcess->time_slice = 0;
@@ -819,30 +833,31 @@ void scheduler_tick(int user_tick, int system)
 	task_t *p = current;
 
 
-	if(unlikely(magicProcess != NULL)){
-		if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
-		if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
-		if(DBG) printk("current running process is: %d \n", (int)current->pid);
-		if(DBG) printk("magic Process need_resched flag is: %d\n", magicProcess->need_resched);
-		if(idle_from_magic == 1) {
+	//if(unlikely(magicProcess != NULL)){
+	//	if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
+	//	if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
+	//	if(DBG) printk("current running process is: %d \n", (int)current->pid);
+	//	if(DBG) printk("magic Process need_resched flag is: %d\n", magicProcess->need_resched);
 
-			//trying to wake up magic
-			int status = wake_up_process(magicProcess);
-			if(DBG) printk("wake status is %d\n", status);
-			if(status == 1) { 
-				if(DBG) printk("magicProcess awakened successfuly\n");
-				idle_from_magic = 0;
-				magic_sleep_flag = 0;
-				schedule();
-			}
+		//if(idle_from_magic == 1) {
 
-			if(DBG) printk("magic Process state after trying to wake is: %d [0 - running, 1 - sleeping]\n", (int)magicProcess->state);
-		}
-	}
+		//	//trying to wake up magic
+		//	int status = wake_up_process(magicProcess);
+		//	if(DBG) printk("wake status is %d\n", status);
+		//	if(status == 1) { 
+		//		if(DBG) printk("magicProcess awakened successfuly\n");
+		//		idle_from_magic = 0;
+		//		magic_sleep_flag = 0;
+		//		schedule();
+		//	}
+		//
+		//	if(DBG) printk("magic Process state after trying to wake is: %d [0 - running, 1 - sleeping]\n", (int)magicProcess->state);
+		//}
+	//}
 
 	if(unlikely(MAGICTIME > 0)) {
 		MAGICTIME -= 1;
-		if(DBG) printk("MAGICTIME = %d\n", MAGICTIME);
+		//if(DBG) printk("MAGICTIME = %d\n", MAGICTIME);
 
 		if(unlikely(MAGICTIME == 0)) {
 			if(DBG) printk("MAGICTIME reached 0, exiting...\n");
@@ -856,28 +871,28 @@ void scheduler_tick(int user_tick, int system)
 	// will be in both
 	
 	
-	if(unlikely(magicProcess != NULL)){
-		if(DBG) printk("current jiffies is %d\nidle status is %d\n", (int)jiffies, idle_from_magic);
-	} else {
-		if(unlikely((current->magic_time > 0) && (current->started_magic == 0) && magicProcess == NULL)) {
-				if (bugblocker) {
-					printk("bug detected in scheduler_tick() start\n");
-				} else {
-					if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
-					start_magic();
-					if(DBG) printk("Exited from start_magic()\n");
-					if(DBG) printk("magicDuration is %d\n", magicDuration);
-				}
+	//if(unlikely(magicProcess != NULL)){
+	//	if(DBG) printk("current jiffies is %d\nidle status is %d\n", (int)jiffies, idle_from_magic);
+	//} else {
+	//	if(unlikely((current->magic_time > 0) && (current->started_magic == 0) && magicProcess == NULL)) {
+	//			if (bugblocker) {
+	//				printk("bug detected in scheduler_tick() start\n");
+	//			} else {
+	//				if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
+	//				start_magic();
+	//				if(DBG) printk("Exited from start_magic()\n");
+	//				if(DBG) printk("magicDuration is %d\n", magicDuration);
+	//			}
+	//
+	//	}
+	//}
 
-		}
-	}
-
-	if(unlikely(idle_from_magic == 1)) {
-		// somehow block other processes from running, maybe in schedule() itself
-		// maybe return early?
-		if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
-		return;
-	}
+	//if(unlikely(idle_from_magic == 1)) {
+	//	// somehow block other processes from running, maybe in schedule() itself
+	//	// maybe return early?
+	//	//if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
+	//	return;
+	//}
 	// ===============================================================================
 
 	if (p == rq->idle) {
@@ -887,6 +902,13 @@ void scheduler_tick(int user_tick, int system)
 		if(DBG) printk("idle_tick() print\n");
 		idle_tick();
 #endif
+		if(unlikely(idle_from_magic == 1)) {
+			// somehow block other processes from running, maybe in schedule() itself
+			// maybe return early?
+			//if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
+			return;
+		}
+
 		return;
 	}
 	if (TASK_NICE(p) > 0)
@@ -982,6 +1004,7 @@ asmlinkage void schedule(void)
 	// MAGIC PROCESS CODE SEGMENT
 	if(unlikely(magicProcess != NULL)) {
 		if (DBG) printk("ENTERED SCHEDULE UNDER MAGIC PROTOCOL\n");
+		
 		// MAGIC TIMER UPDATING
 		if(unlikely(magicDuration != magicProcess->magic_time)) {
 			// **BUG IF CALLED TWICE WITH THE SAME DURATION**
@@ -1061,7 +1084,7 @@ need_resched:
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
 
-		// CATCHING MAGIC TRYNA SLEEP
+		// CATCHING MAGIC TRYING TO SLEEP
 		if(current->magic_time > 0) {
 			printk("suspended magic process detected\n");
 			
@@ -1076,9 +1099,10 @@ need_resched:
 			idle_from_magic = 1;
 			magic_sleep_flag = 1;
 			next = rq->idle;
+			deactivate_task(prev, rq);
 			goto switch_tasks;
 		}
-
+		// =====================================================================================
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;

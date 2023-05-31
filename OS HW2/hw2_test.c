@@ -21,7 +21,7 @@ int main()
         res = magic_clock(9);
         assert(res == 0); // verify no error
         printf("child is starting to sleep\n");
-        sleep(10);
+        sleep(5);
         printf("child is done sleeping\n");
         return 0;
     }
