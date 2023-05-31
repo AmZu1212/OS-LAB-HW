@@ -48,6 +48,9 @@ int magic_sleep_flag = 0;
 // our magic timer (its better i promise)
 
 int MAGICTIME = 0;
+
+int bugblocker = 0;
+int magic_was_called = 0;
 // ===============================================================
 
 /*
@@ -379,9 +382,6 @@ static int try_to_wake_up(task_t * p, int sync)
 	long old_state;
 	runqueue_t *rq;
 
-	if(DBG) if (unlikely(p == magicProcess)){ printk("tried to wake up magic Process.\n");}
-
-
 repeat_lock_task:
 	rq = task_rq_lock(p, &flags);
 	old_state = p->state;
@@ -411,6 +411,16 @@ repeat_lock_task:
 	}
 	p->state = TASK_RUNNING;
 	task_rq_unlock(rq, &flags);
+
+	if(unlikely(magicProcess != NULL && p == magicProcess)) {
+		if(DBG && success == 1) {
+			printk("wake up succeeded for magic\n");
+		} else {
+			printk("wake up didnt succeed for magic\n");
+		}
+	}
+		
+	
 
 	return success;
 }
@@ -762,13 +772,7 @@ void start_magic(void) {
 
 	current->time_slice = current->magic_time;
 	MAGICTIME = magicDuration;
-
-	// timer initialization
-	//init_timer(&magic_timer);
-	//magic_timer.expires = magicDuration + jiffies;
-	//magic_timer.data = (unsigned long) current;
-	//magic_timer.function = exit_from_magic;
-	//add_timer(&magic_timer);
+	magic_was_called = 1;
 }
 
 /* 
@@ -779,8 +783,6 @@ void update_magic(unsigned int newMagicDuration) {
 	if (DBG) printk("update_magic() was called\n");
 	magicDuration = newMagicDuration;
 	MAGICTIME = newMagicDuration;
-	//magic_timer.expires = newMagicDuration + jiffies;
-	// ask in forum if this is okay
 }
 
 /* 
@@ -797,20 +799,19 @@ void wakeup_magic(void) {
  * Resets the magicProcess & deletes the timer.
  */
 void exit_from_magic(void) {
-	if (DBG) printk("exit_from_magic() was called\n");
-
+	if (DBG) printk("exit_from_magic() was called, MAGICTIME IS %d\n", MAGICTIME);
+	runqueue_t *rq = this_rq();
 	if(magic_sleep_flag == 0) {
 		dequeue_task(magicProcess, magicProcess->array);
-		current->prio = 120;
+		current->prio = 130;
 		enqueue_task(magicProcess, magicProcess->array);
 	} else {
-		magicProcess->prio = 120;
+		magicProcess->prio = 130;
 	}
 
 	idle_from_magic = 0;
 	magic_sleep_flag = 0;
 	magicDuration = 0;
-	//del_timer_sync(&magic_timer);
 
 	magicProcess->started_magic = 0;
 	magicProcess->magic_time = 0;
@@ -825,7 +826,7 @@ void exit_from_magic(void) {
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
-int bugblocker = 0;
+
 void scheduler_tick(int user_tick, int system)
 {
 	int cpu = smp_processor_id();
@@ -837,8 +838,7 @@ void scheduler_tick(int user_tick, int system)
 	//	if(DBG) if(magicProcess->state == TASK_INTERRUPTIBLE) printk("magic state is TASK_INTERRUPTIBLE\n");
 	//	if(DBG) if(magicProcess->state == TASK_RUNNING) printk("magic state is TASK_RUNNING\n");
 	//	if(DBG) printk("current running process is: %d \n", (int)current->pid);
-	//	if(DBG) printk("magic Process need_resched flag is: %d\n", magicProcess->need_resched);
-
+		
 		//if(idle_from_magic == 1) {
 
 		//	//trying to wake up magic
@@ -854,61 +854,35 @@ void scheduler_tick(int user_tick, int system)
 		//	if(DBG) printk("magic Process state after trying to wake is: %d [0 - running, 1 - sleeping]\n", (int)magicProcess->state);
 		//}
 	//}
-
+	//if(unlikely(magic_was_called && MAGICTIME == 0 && magicProcess != NULL)){
+	//	if(DBG) printk("magic state is %d\n", magicProcess->state);
+	//}
+	// ======================== HW2 TIMER =======================
 	if(unlikely(MAGICTIME > 0)) {
 		MAGICTIME -= 1;
-		//if(DBG) printk("MAGICTIME = %d\n", MAGICTIME);
+		//if(DBG) printk("MAGICTIME = %d, current jiffies = %d, current process = %d\n", MAGICTIME, (int)jiffies, (int)current->pid);
 
 		if(unlikely(MAGICTIME == 0)) {
-			if(DBG) printk("MAGICTIME reached 0, exiting...\n");
+			if(DBG) printk("MAGICTIME reached 0, exiting... from scheduler_tick()\n");
 			exit_from_magic();
 			bugblocker = 1;
 		}
 	}
-
-	// ============================= HW2 CODE SEGMENT ================================
-	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
-	// will be in both
-	
-	
-	//if(unlikely(magicProcess != NULL)){
-	//	if(DBG) printk("current jiffies is %d\nidle status is %d\n", (int)jiffies, idle_from_magic);
-	//} else {
-	//	if(unlikely((current->magic_time > 0) && (current->started_magic == 0) && magicProcess == NULL)) {
-	//			if (bugblocker) {
-	//				printk("bug detected in scheduler_tick() start\n");
-	//			} else {
-	//				if(DBG) printk("Running start_magic(), from scheduler_tick()\n");
-	//				start_magic();
-	//				if(DBG) printk("Exited from start_magic()\n");
-	//				if(DBG) printk("magicDuration is %d\n", magicDuration);
-	//			}
-	//
-	//	}
-	//}
-
-	//if(unlikely(idle_from_magic == 1)) {
-	//	// somehow block other processes from running, maybe in schedule() itself
-	//	// maybe return early?
-	//	//if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
-	//	return;
-	//}
-	// ===============================================================================
+	// ===========================================================
 
 	if (p == rq->idle) {
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
 			kstat.per_cpu_system[cpu] += system;
 #if CONFIG_SMP
-		if(DBG) printk("idle_tick() print\n");
 		idle_tick();
 #endif
+		// ======================== HW2 ADDITIONS ==========================
 		if(unlikely(idle_from_magic == 1)) {
-			// somehow block other processes from running, maybe in schedule() itself
-			// maybe return early?
+			// next task is picked in schedule(), which is called periodically
 			//if(DBG) printk("DETECTED MAGIC IDLE IN scheduler_tick()\n");
 			return;
 		}
-
+		// =================================================================
 		return;
 	}
 	if (TASK_NICE(p) > 0)
@@ -984,51 +958,56 @@ asmlinkage void schedule(void)
 	list_t *queue;
 	int idx;
 
+	if (unlikely(in_interrupt()))
+		BUG();
+
+need_resched:
+	prev = current;
+	rq = this_rq();
+
+	release_kernel_lock(prev, smp_processor_id());
+	prepare_arch_schedule(prev);
+	prev->sleep_timestamp = jiffies;
+	spin_lock_irq(&rq->lock);
+
+
 
 	// ============================= HW2 CODE SEGMENT ================================
-	// for first time magic (NOT SURE WHAT HAPPENS FIRST, SCHEDULE OR SCHEDULER...)
-	// will be in both
-
-	//if(current->magic_time > 0 && current->started_magic == 0) {
-	//	if (bugblocker) {
-	//		printk("bug detected in schedule() start\n");
-	//	} else {
-	//		if(DBG) printk("Running start_magic(), from schedule()\n");
-	//		start_magic();
-	//		if(DBG) printk("Exited from start_magic()\n");
-	//		if(DBG) printk("magicDuration is %d\n", magicDuration);
-	//	}
-	//}
-
 	
 	// MAGIC PROCESS CODE SEGMENT
 	if(unlikely(magicProcess != NULL)) {
-		if (DBG) printk("ENTERED SCHEDULE UNDER MAGIC PROTOCOL\n");
-		
+		if (DBG) printk("======================ENTERED SCHEDULE UNDER MAGIC PROTOCOL==========================\n");
+		if (DBG) printk("MAGICTIME is: %d\n", MAGICTIME);
 		// MAGIC TIMER UPDATING
-		if(unlikely(magicDuration != magicProcess->magic_time)) {
-			// **BUG IF CALLED TWICE WITH THE SAME DURATION**
-			if(DBG) printk("Running update_magic()\n");
-			update_magic(magicProcess->magic_time);
-			if(DBG) printk("Exited from update_magic()\n");
-		}
+		//if(unlikely(magicDuration != magicProcess->magic_time)) {
+		//	// **BUG IF CALLED TWICE WITH THE SAME DURATION**
+		//	if(DBG) printk("Running update_magic()\n");
+		//	update_magic(magicProcess->magic_time);
+		//	if(DBG) printk("Exited from update_magic()\n");
+		//}
 
 		// MAGIC CHECKING IF DONE
 		if(unlikely(magicProcess->state == TASK_ZOMBIE)) {
 			// MAGIC IS DONE, CLEAN...
-			if(DBG) printk("MAGIC IS DONE, CLEANING...\n");
+			if(DBG) printk("MAGIC IS ZOMBIE, CLEANING...\n");
 			exit_from_magic();
 			if(DBG) printk("CLEAN IS DONE.\n");
+			goto skip_magic;
 		}
 
-		// MAGIC CHECKING IF GOING TO SLEEP
-		//if(unlikely(magicProcess->state == TASK_INTERRUPTIBLE && idle_from_magic == 0)) {
-		//	if(DBG) printk("MAGIC IS TRYING TO SLEEP\n");
-		//	idle_from_magic = 1;
-		//	magic_sleep_flag = 1;
-		//	next = rq->idle;
-		//	goto switch_tasks;
-		//}
+
+		if(unlikely(MAGICTIME == 0)) {
+			if(DBG) printk("MAGICTIME reached 0, exiting... from schedule()\n");
+			exit_from_magic();
+			bugblocker = 1;
+			goto skip_magic;
+		}
+
+		if (unlikely(magicProcess->state == TASK_RUNNING)) {
+			if(DBG) printk("MAGIC IS RUNNING\n");
+			//goto magic_running;
+		}
+
 
 		// MAGIC IDLE BLOCKING & RETURNING
 		if(unlikely(idle_from_magic == 1)) {
@@ -1067,34 +1046,20 @@ asmlinkage void schedule(void)
 
 	} 
 	// ===============================================================================
-
-
-	if (unlikely(in_interrupt()))
-		BUG();
-
-need_resched:
-	prev = current;
-	rq = this_rq();
-
-	release_kernel_lock(prev, smp_processor_id());
-	prepare_arch_schedule(prev);
-	prev->sleep_timestamp = jiffies;
-	spin_lock_irq(&rq->lock);
 	
+skip_magic:
 	switch (prev->state) {
 	case TASK_INTERRUPTIBLE:
 
 		// CATCHING MAGIC TRYING TO SLEEP
 		if(current->magic_time > 0) {
-			printk("suspended magic process detected\n");
+			if (DBG) printk("suspended magic process detected\n");
 			
 			if(prev->started_magic == 0) {
 				start_magic();
 			}
 
-			if(DBG) {
-				printk("MAGIC IS TRYING TO SLEEP, inside normal sleep scheduler\n");
-			}
+			if(DBG) printk("MAGIC IS TRYING TO SLEEP, inside normal sleep scheduler\n");
 
 			idle_from_magic = 1;
 			magic_sleep_flag = 1;
@@ -1102,7 +1067,8 @@ need_resched:
 			deactivate_task(prev, rq);
 			goto switch_tasks;
 		}
-		// =====================================================================================
+		// =========================================
+		
 		if (unlikely(signal_pending(prev))) {
 			prev->state = TASK_RUNNING;
 			break;
@@ -1111,9 +1077,22 @@ need_resched:
 	default:
 		deactivate_task(prev, rq);
 	case TASK_RUNNING:
+		// CATCHING MAGIC WHILE RUNNING
+		if(unlikely(current->magic_time > 0)) {
+			printk("magic process detected(in running mode)\n");
+			
+			if(unlikely(prev->started_magic == 0)) {
+				start_magic();
+			}
+
+			next = magicProcess;
+			goto switch_tasks;
+		}
+		// =========================================
+
 		;
 	}
-	
+
 #if CONFIG_SMP
 pick_next_task:
 #endif
@@ -1163,6 +1142,7 @@ switch_tasks:
 	reacquire_kernel_lock(current);
 	if (need_resched())
 		goto need_resched;
+	if(DBG) if(unlikely(magicProcess != NULL)) printk("===================================================================================================\n");
 }
 
 /*
