@@ -389,6 +389,7 @@ int sys_magic_clock(unsigned int seconds)
 	//p->prio = 0;
 	//printk("new priority = 0 is set\n");
 	p->magic_time = newjiffies;
+	p->magic_call_time = jiffies;
 	// check later for needed include
 
 	//printk("BEFORE magic_clock schedule call\n");
