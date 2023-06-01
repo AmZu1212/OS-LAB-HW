@@ -1076,7 +1076,7 @@ switch_tasks:
 	reacquire_kernel_lock(current);
 	if (need_resched())
 		goto need_resched;
-	if(DBG) if(unlikely(magicProcess != NULL)) printk("===================================================================================================\n");
+
 }
 
 /*
