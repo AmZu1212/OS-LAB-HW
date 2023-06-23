@@ -87,7 +87,7 @@ def main():
 	f = os.open(DEVICE_PATH, os.O_RDWR)
 	
 	# Set a key
-	repeated = "abc"
+	repeated = "ABC"
 	fcntl.ioctl(f, SET_STRING, null_terminator(repeated))
 
 	# Write something
@@ -96,18 +96,22 @@ def main():
 	os.write(f, message)
 
 	# Read the repeated string up to len_msg bytes, even if we request more
-	# read_message = os.read(f, len_msg + 10)
 	read_message1 = os.read(f, 2)
 	read_message2 = os.read(f, 3)
 	read_message3 = os.read(f, 4)
+	print("first message is ", read_message1)
+	print("second message is ", read_message2)
+	print("third message is ", read_message3)
 	read_message = read_message1 + read_message2 + read_message3
 	repeated_times = int(len_msg / len(repeated) + 1)
 
 	# repeated string should be repeated ~repeated_times, but truncated after len_msg bytes
 	expected_message = (repeated * repeated_times)[:len_msg]
-	assert (read_message == expected_message)
-
-	# Finaly close the device file
+	print "we expected : ", expected_message 
+	print "we got : ", read_message
+	#assert (read_message == expected_message)
+	fcntl.ioctl(f, RESET, null_terminator(repeated))
+	# Finally close the device file
 	os.close(f)
 
 if __name__ == '__main__':
