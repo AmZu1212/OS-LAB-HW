@@ -69,6 +69,10 @@ def _IOR(_type, nr, size):
 def _IOW(_type, nr, size):
 	return _IOC(_IOC_WRITE, _type, nr, sizeof[size])
 
+def null_terminator(s):
+	""" Add a NULL terminator to a string"""
+	return s + '\0'
+
 def main():
 	"""Test the device driver"""
 	
@@ -84,7 +88,7 @@ def main():
 	
 	# Set a key
 	repeated = "abc"
-	fcntl.ioctl(f, SET_STRING, repeated)
+	fcntl.ioctl(f, SET_STRING, null_terminator(repeated))
 
 	# Write something
 	message = "ignored"
@@ -97,7 +101,7 @@ def main():
 
 	# repeated string should be repeated ~repeated_times, but truncated after len_msg bytes
 	expected_message = (repeated * repeated_times)[:len_msg]
-	assert (message == expected_message)
+	assert (read_message == expected_message)
 
 	# Finaly close the device file
 	os.close(f)
