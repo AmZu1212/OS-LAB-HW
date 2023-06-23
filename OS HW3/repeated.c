@@ -108,24 +108,19 @@ ssize_t my_read(struct file *filp, char *buf, size_t count, loff_t *f_pos)
     printk("the allowed number of bytes is %d\n", allowed_bytes);
 
     int leftover = *f_pos;
-
     printk("before while loop\n");
     while (leftover >= string_size)
     {
         leftover -= string_size;
     }
     printk("after while loop\n");
-
-
     int string_pos = leftover;
-
-
     printk("entering for loop\n");
-    for (; bytes_read < allowed_bytes; bytes_read++)
+    for (; bytes_read < allowed_bytes && bytes_read < count; bytes_read++)
     {
         if (bytes_read == count - 1)
         {
-            printk("done reading bytes\n");
+            printk("done reading bytes (reading last byte)\n");
             // full = true
             // break;
         }
@@ -143,7 +138,7 @@ ssize_t my_read(struct file *filp, char *buf, size_t count, loff_t *f_pos)
         {
             printk("string pos was reset\n");
             string_pos = 0;
-	    }
+	}
     }
     printk("ended for loop, bytes read is: %d\n",bytes_read);
     *f_pos += bytes_read;
