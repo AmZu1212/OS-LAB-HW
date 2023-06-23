@@ -105,15 +105,21 @@ ssize_t my_read(struct file *filp, char *buf, size_t count, loff_t *f_pos)
     // bool full = false;
     int bytes_read = 0;
     int allowed_bytes = max_size - *f_pos;
+    printk("the allowed number of bytes is %d\n", allowed_bytes);
 
     int leftover = *f_pos;
+
     printk("before while loop\n");
     while (leftover >= string_size)
     {
         leftover -= string_size;
     }
     printk("after while loop\n");
+
+
     int string_pos = leftover;
+
+
     printk("entering for loop\n");
     for (; bytes_read < allowed_bytes; bytes_read++)
     {
@@ -121,7 +127,7 @@ ssize_t my_read(struct file *filp, char *buf, size_t count, loff_t *f_pos)
         {
             printk("done reading bytes\n");
             // full = true
-            break;
+            // break;
         }
 
         // copy byte to user
@@ -137,11 +143,11 @@ ssize_t my_read(struct file *filp, char *buf, size_t count, loff_t *f_pos)
         {
             printk("string pos was reset\n");
             string_pos = 0;
-        }
+	    }
     }
-    printk("ended for loop, bytes read is: %d\n",(bytes_read + 1));
+    printk("ended for loop, bytes read is: %d\n",bytes_read);
     *f_pos += bytes_read;
-    return ++bytes_read;
+    return bytes_read;
 }
 
 // Ignores writing, but updates max_size to max_size+count, returns count
@@ -226,7 +232,7 @@ int my_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned 
             return -EBADF;
         }
         module_string[i] = '\0';
-
+	printk("the string we set is : %s\n", module_string);
         break;
 
     case RESET: // returns the buffer to string = null
