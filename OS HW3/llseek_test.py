@@ -97,7 +97,7 @@ def main():
 
 	# Read the repeated string up to len_msg bytes, even if we request more
 	read_message = os.read(f, 4)
-	os.llseek(f, 0, -10)
+	os.lseek(f, -10, 1)
 	read_message = read_message + os.read(f, 5)
 	#print("first message is ", read_message1)
 	#print("third message is ", read_message3)

@@ -155,11 +155,11 @@ ssize_t my_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos
 }
 
 // Sets llseek to be buffer_pointer+shift. if it over flows you reach 0 or max_size
-loff_t my_llseek(struct file *flip, loff_t buffer_pointer, int shift)
+loff_t my_llseek(struct file *flip, loff_t shift, int mode)
 {
     printk("my_llseek was called\n");
     // 0 <-> max_size
-    size_t newpos = flip->f_pos + shift;
+    loff_t newpos = flip->f_pos + shift;
 
     if (newpos >= max_size)
     {
