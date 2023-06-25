@@ -96,13 +96,11 @@ def main():
 	os.write(f, message)
 
 	# Read the repeated string up to len_msg bytes, even if we request more
-	read_message1 = os.read(f, 2)
-	read_message2 = os.read(f, 3)
-	read_message3 = os.read(f, 4)
-	print("first message is ", read_message1)
-	print("second message is ", read_message2)
-	print("third message is ", read_message3)
-	read_message = read_message1 + read_message2 + read_message3
+	read_message = os.read(f, 4)
+	os.llseek(f, 0, -10)
+	read_message = read_message + os.read(f, 5)
+	#print("first message is ", read_message1)
+	#print("third message is ", read_message3)
 	repeated_times = int(len_msg / len(repeated) + 1)
 
 	# repeated string should be repeated ~repeated_times, but truncated after len_msg bytes

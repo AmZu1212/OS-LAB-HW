@@ -159,7 +159,7 @@ loff_t my_llseek(struct file *flip, loff_t buffer_pointer, int shift)
 {
     printk("my_llseek was called\n");
     // 0 <-> max_size
-    size_t newpos = buffer_pointer + shift;
+    size_t newpos = flip->f_pos + shift;
 
     if (newpos >= max_size)
     {
@@ -171,7 +171,7 @@ loff_t my_llseek(struct file *flip, loff_t buffer_pointer, int shift)
         newpos = 0;
     }
 
-    buffer_pointer = newpos;
+    flip->f_pos = newpos;
     return newpos;
 }
 
