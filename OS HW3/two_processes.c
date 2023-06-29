@@ -7,11 +7,14 @@
 #include <string.h>
 #include <semaphore.h>
 #include <sys/ioctl.h>
+#include <linux/ioctl.h>
 
 // Globals
 #define DEVICE_PATH "/dev/repeated"
+#define MY_MAGIC 'r'
 
-
+#define SET_STRING _IOW(MY_MAGIC,0,int)
+/*
 // Utilities for calculating the IOCTL command codes
 #define _IOC_NRBITS   8
 #define _IOC_TYPEBITS 8
@@ -42,11 +45,14 @@
 #define _IOR(_type, nr, size) _IOC(_IOC_READ, _type, nr, sizeof(size))
 #define _IOW(_type, nr, size) _IOC(_IOC_WRITE, _type, nr, sizeof(size))
 
+*/
 
 sem_t sem_A, sem_B;
 
 void process_A()
 {
+	printf("process A starts run\n");	
+
 	printf("process A start (1) \n");
     int fd = open(DEVICE_PATH, O_RDWR);
     if (fd == -1) {
@@ -56,12 +62,15 @@ void process_A()
 
     // SET_STRING "ABC"
     char repeated[] = "ABC";
-    int cmd_number = 0; // Specify the appropriate IOCTL command number
+    //struct inode *inode = NULL;
+    //unsigned long arg = (unsigned long)repeated;
+    int cmd_number = SET_STRING; // Specify the appropriate IOCTL command number
     if (ioctl(fd, cmd_number, repeated) == -1) {
         perror("Error writing to device");
         close(fd);
         exit(1);
     }
+    printf("ioctl successed!!\n");
 
     // Write "Hello"
     char message[] = "Hello";
@@ -105,7 +114,8 @@ void process_A()
 
 void process_B()
 {
-    sem_wait(&sem_B); // Wait for Process A to write
+   printf("process B starts run\n");
+   //sem_wait(&sem_B); // Wait for Process A to write
 	printf("process B start (2) \n");
     int fd = open(DEVICE_PATH, O_RDWR);
     if (fd == -1) {
@@ -127,7 +137,7 @@ void process_B()
 
 	printf("process B end (2) \n");
     sem_post(&sem_A); // Signal Process A to read 5 bytes
-
+    printf("hii\n");
     sem_wait(&sem_B); // Wait for Process A to execute SET_STRING "Aha"
 
 	printf("process B start (4) \n");
