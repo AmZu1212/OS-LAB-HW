@@ -82,6 +82,8 @@ int my_release(struct inode *inode, struct file *filp)
 {
     // handle file closing
     // maybe not needed?
+	max_size = 0;
+	string_size = 0;
     printk("called release\n");
     return 0;
 }
