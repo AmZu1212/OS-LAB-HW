@@ -113,6 +113,10 @@ int my_open(struct inode *inode, struct file *filp)
 
 int my_release(struct inode *inode, struct file *filp)
 {
+    if(filp->private_data != NULL){
+        kfree(filp->private_data);
+    }
+    // MAYBE FREE PRIVATE DATA
     if(DBG) printk("called release\n");
     return 0;
 }
